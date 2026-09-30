@@ -13,7 +13,11 @@ Aplikasi ini menggunakan:
 4. Beri nama, misalnya `rt-01-kiyaran`.
 5. Ikuti proses sampai proyek selesai.
 
-## LANGKAH 2 — Aktifkan Authentication
+## LANGKAH 2 — Aktifkan Authentication (hanya untuk Ketua RT/Bendahara)
+
+Aplikasi **tidak menampilkan halaman login di awal**. Dashboard langsung terbuka. Password hanya diminta ketika seseorang memilih tambah/edit/hapus data.
+
+
 1. Firebase Console > Build > Authentication.
 2. Get started.
 3. Sign-in method > Email/Password.
@@ -89,3 +93,11 @@ Versi berikutnya dapat ditambahkan:
 - surat pengantar RT
 - audit log perubahan data
 - backup otomatis
+
+## PERUBAHAN VERSI INI
+- Tidak ada login di halaman awal.
+- Dashboard langsung terbuka.
+- Warga dapat melihat data yang diizinkan.
+- Saat tambah/edit/hapus, aplikasi meminta email + password akun Ketua RT/Bendahara.
+- Hak tulis tetap dijaga Firebase Security Rules.
+- NIK dan No. KK tetap disamarkan pada tampilan warga.
