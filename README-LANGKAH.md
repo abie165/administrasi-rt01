@@ -1,103 +1,55 @@
-# APLIKASI ADMINISTRASI RT
+# APLIKASI ADMINISTRASI RT — FINAL
 
-Aplikasi ini menggunakan:
-- GitHub = menyimpan kode
-- Firebase Authentication = login
-- Firebase Firestore = database online
-- Firebase Hosting = alamat aplikasi online
+## Isi paket
+- `index.html` — tampilan aplikasi
+- `style.css` — desain mobile ringan
+- `app.js` — fungsi aplikasi + koneksi Firebase
+- `firebase.json` — konfigurasi Firebase Hosting/Firestore
+- `firestore.rules` — aturan keamanan database
 
-## LANGKAH 1 — Buat proyek Firebase
-1. Buka https://console.firebase.google.com/
-2. Login dengan akun Google.
-3. Klik Add project.
-4. Beri nama, misalnya `rt-01-kiyaran`.
-5. Ikuti proses sampai proyek selesai.
+## Hak akses
+- Warga: melihat data warga, mencari/filter, melihat kas dan statistik.
+- Ketua RT: mengelola data warga dan kas.
+- Bendahara: mengelola kas.
+- Tidak ada login saat aplikasi dibuka. Login hanya saat tombol **Pengelola** ditekan.
 
-## LANGKAH 2 — Aktifkan Authentication (hanya untuk Ketua RT/Bendahara)
+## 1. Buat project Firebase
+1. Buka Firebase Console.
+2. Buat project baru.
+3. Tambahkan Web App.
+4. Salin konfigurasi Firebase.
+5. Buka `app.js`, cari `const firebaseConfig`, lalu ganti nilai `GANTI_...` dengan konfigurasi milik Anda.
 
-Aplikasi **tidak menampilkan halaman login di awal**. Dashboard langsung terbuka. Password hanya diminta ketika seseorang memilih tambah/edit/hapus data.
+## 2. Aktifkan Authentication
+Firebase Console → Authentication → Sign-in method → aktifkan **Email/Password**.
+Buat akun email untuk Ketua RT dan Bendahara.
 
+## 3. Buat Firestore
+Firebase Console → Firestore Database → Create database.
+Buat collection `users`.
+Untuk masing-masing akun, buat dokumen dengan ID = UID akun Authentication.
+Contoh:
+- `users/UID_KETUA` → `role: ketua`
+- `users/UID_BENDAHARA` → `role: bendahara`
 
-1. Firebase Console > Build > Authentication.
-2. Get started.
-3. Sign-in method > Email/Password.
-4. Aktifkan Email/Password.
-5. Tambahkan akun pengguna:
-   - Ketua RT
-   - Bendahara/Petugas
-   - Warga
+## 4. Pasang Rules
+Firebase Console → Firestore Database → Rules → salin isi `firestore.rules` → Publish.
 
-## LANGKAH 3 — Aktifkan Firestore
-1. Build > Firestore Database.
-2. Create database.
-3. Pilih Production mode.
-4. Pilih lokasi database yang sesuai.
+## 5. Upload ke GitHub
+Buat repository baru, lalu upload semua file dalam paket ini. Jangan upload data warga nyata di repository.
 
-## LANGKAH 4 — Ambil konfigurasi web
-1. Project settings (ikon roda gigi).
-2. General > Your apps.
-3. Add app > Web.
-4. Daftarkan aplikasi.
-5. Firebase akan memberikan `firebaseConfig`.
-6. Buka `app.js`.
-7. Ganti bagian `firebaseConfig` dengan konfigurasi dari Firebase.
-
-## LANGKAH 5 — Aturan hak akses
-Upload isi `firestore.rules` ke Firestore Rules.
-
-PENTING:
-- warga hanya read
-- ketua/bendahara dapat create/update/delete
-- NIK dan No. KK tetap disimpan di database, tetapi di tampilan aplikasi selalu disamarkan.
-
-## LANGKAH 6 — Role akun
-Aplikasi membaca custom claim:
-- `ketua`
-- `bendahara`
-- jika tidak ada claim, pengguna dianggap `warga`.
-
-Custom claim sebaiknya dibuat menggunakan Firebase Admin SDK/Cloud Functions, bukan dari browser.
-
-## LANGKAH 7 — Hosting
-Instal Firebase CLI di komputer:
+## 6. Publish ke Firebase Hosting
+Install Firebase CLI:
 `npm install -g firebase-tools`
 
-Login:
+Lalu:
 `firebase login`
 
 Di folder aplikasi:
-`firebase init hosting`
-
-Pilih proyek Firebase yang sudah dibuat dan gunakan folder saat ini sebagai public directory.
-
-Lalu:
 `firebase deploy`
 
-Aplikasi akan mendapatkan alamat `*.web.app`.
+## 7. Alur penggunaan
+Dashboard langsung terbuka tanpa login. Warga dapat mencari nama dan memakai filter. Untuk perubahan data, tekan **Pengelola** dan masuk dengan akun Ketua RT/Bendahara.
 
-## CATATAN KEAMANAN
-Jangan pernah menaruh password Ketua RT di file JavaScript.
-Jangan memasukkan NIK/No. KK asli ke kode program.
-Gunakan akun Firebase Authentication.
-Backup database secara berkala.
-
-## PENGEMBANGAN LANJUT
-Versi berikutnya dapat ditambahkan:
-- data KK dan hubungan anggota keluarga
-- pencarian/filter warga
-- cetak kartu data keluarga
-- laporan kas bulanan/tahunan
-- ekspor Excel/PDF
-- grafik kependudukan
-- pengumuman RT
-- surat pengantar RT
-- audit log perubahan data
-- backup otomatis
-
-## PERUBAHAN VERSI INI
-- Tidak ada login di halaman awal.
-- Dashboard langsung terbuka.
-- Warga dapat melihat data yang diizinkan.
-- Saat tambah/edit/hapus, aplikasi meminta email + password akun Ketua RT/Bendahara.
-- Hak tulis tetap dijaga Firebase Security Rules.
-- NIK dan No. KK tetap disamarkan pada tampilan warga.
+## Catatan privasi
+Data lengkap NIK/KK disimpan di `warga_private` dan hanya dapat diakses Ketua RT melalui Rules. Data yang tampil kepada pengunjung berada di `warga_public` dengan NIK/KK sudah disamarkan. Karena `warga_public` dan `kas` dapat dibaca tanpa login, jangan memasukkan informasi sensitif lain ke data publik.
