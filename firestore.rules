@@ -7,13 +7,15 @@ service cloud.firestore {
         (request.auth.token.role == "ketua" || request.auth.token.role == "bendahara");
     }
 
+    // Dashboard/data can be read publicly by the app.
+    // Writes remain restricted to Ketua RT/Bendahara.
     match /warga/{id} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     match /kas/{id} {
-      allow read: if signedIn();
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
   }
