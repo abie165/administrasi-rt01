@@ -4,12 +4,12 @@ import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot
 
 // GANTI konfigurasi berikut dengan konfigurasi proyek Firebase Anda.
 const firebaseConfig = {
-  apiKey: "AIzaSyDiklmp3N0o0kMRy84LkzUguvCEmFVSluM",
-  authDomain: "administrasi-rt01.firebaseapp.com",
-  projectId: "administrasi-rt01",
-  storageBucket: "administrasi-rt01.firebasestorage.app",
-  messagingSenderId: "143863042733",
-  appId: "1:143863042733:web:137940acec212002316c24"
+  apiKey: "GANTI_API_KEY",
+  authDomain: "GANTI_PROJECT_ID.firebaseapp.com",
+  projectId: "GANTI_PROJECT_ID",
+  storageBucket: "GANTI_PROJECT_ID.firebasestorage.app",
+  messagingSenderId: "GANTI_MESSAGING_SENDER_ID",
+  appId: "GANTI_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -32,18 +32,52 @@ async function loadRole(user){
   document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.toggle("hidden", !isAdmin()));
 }
 
-onAuthStateChanged(auth, async user=>{
-  if(!user){ $("loginView").classList.remove("hidden"); $("appView").classList.add("hidden"); $("logoutBtn").classList.add("hidden"); return; }
-  $("loginView").classList.add("hidden"); $("appView").classList.remove("hidden"); $("logoutBtn").classList.remove("hidden");
-  await loadRole(user); subscribeWarga(); subscribeKas();
+// Aplikasi terbuka tanpa login.
+// Semua orang dapat melihat dashboard/data yang diizinkan.
+// Tindakan tambah/edit/hapus meminta password admin.
+// Password TIDAK disimpan di browser; validasi dilakukan melalui Firebase Authentication.
+let adminMode = false;
+
+async function adminLogin() {
+  const email = prompt("Masukkan email akun Ketua RT/Bendahara:");
+  if (!email) return false;
+  const password = prompt("Masukkan password:");
+  if (!password) return false;
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    const token = await auth.currentUser.getIdTokenResult(true);
+    const r = token.claims.role;
+    if (r !== "ketua" && r !== "bendahara") {
+      await signOut(auth);
+      alert("Akun ini tidak memiliki hak pengelolaan.");
+      return false;
+    }
+    role = r;
+    adminMode = true;
+    $("roleLabel").textContent = r==="ketua" ? "Mode Ketua RT" : "Mode Bendahara";
+    document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.remove("hidden"));
+    renderWarga(); renderKas();
+    return true;
+  } catch (err) {
+    alert("Email atau password salah.");
+    return false;
+  }
+}
+
+function requireAdmin() {
+  if (adminMode) return Promise.resolve(true);
+  return adminLogin();
+}
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  $("appView").classList.remove("hidden");
+  $("logoutBtn").classList.add("hidden");
+  subscribeWarga();
+  subscribeKas();
+  renderDashboard();
 });
 
-$("loginForm").addEventListener("submit", async e=>{
-  e.preventDefault(); $("loginError").textContent="";
-  try{ await signInWithEmailAndPassword(auth,$("email").value,$("password").value); }
-  catch(err){ $("loginError").textContent="Email atau password salah / akun belum diaktifkan."; }
-});
-$("logoutBtn").onclick=()=>signOut(auth);
+$("logoutBtn").onclick=async()=>{ await signOut(auth); adminMode=false; role="warga"; document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.add("hidden")); renderWarga(); renderKas(); };
 
 document.querySelectorAll(".tabs button").forEach(btn=>btn.onclick=()=>{
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
@@ -93,18 +127,18 @@ function renderDashboard(){
 function age(d){if(!d)return 0;const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
-$("addWargaBtn").onclick=()=>{ $("wargaForm").reset(); $("wargaId").value=""; $("wargaDialogTitle").textContent="Tambah Warga"; $("wargaDialog").showModal(); };
-$("wargaForm").addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return;
+$("addWargaBtn").onclick=async()=>{ if(!(await requireAdmin()))return; $("wargaForm").reset(); $("wargaId").value=""; $("wargaDialogTitle").textContent="Tambah Warga"; $("wargaDialog").showModal(); };
+$("wargaForm").addEventListener("submit",async e=>{e.preventDefault(); if(!(await requireAdmin()))return;
  const data={nama:$("nama").value.trim(),nik:$("nik").value.trim(),kk:$("kk").value.trim(),tempatLahir:$("tempatLahir").value.trim(),tanggalLahir:$("tanggalLahir").value,jenisKelamin:$("jenisKelamin").value,statusKeluarga:$("statusKeluarga").value,alamat:$("alamat").value.trim(),updatedAt:new Date().toISOString()};
  const id=$("wargaId").value; if(id) await updateDoc(doc(db,"warga",id),data); else await addDoc(collection(db,"warga"),data); $("wargaDialog").close();
 });
-window.editWarga=id=>{const w=wargaCache.find(x=>x.id===id); if(!w)return; $("wargaId").value=id; for(const [k,v] of Object.entries({nama:w.nama,nik:w.nik,kk:w.kk,tempatLahir:w.tempatLahir,tanggalLahir:w.tanggalLahir,jenisKelamin:w.jenisKelamin,statusKeluarga:w.statusKeluarga,alamat:w.alamat}))$(k).value=v||""; $("wargaDialogTitle").textContent="Ubah Data Warga"; $("wargaDialog").showModal();};
-window.hapusWarga=async id=>{if(confirm("Hapus data warga ini?"))await deleteDoc(doc(db,"warga",id));};
+window.editWarga=async id=>{ if(!(await requireAdmin()))return;const w=wargaCache.find(x=>x.id===id); if(!w)return; $("wargaId").value=id; for(const [k,v] of Object.entries({nama:w.nama,nik:w.nik,kk:w.kk,tempatLahir:w.tempatLahir,tanggalLahir:w.tanggalLahir,jenisKelamin:w.jenisKelamin,statusKeluarga:w.statusKeluarga,alamat:w.alamat}))$(k).value=v||""; $("wargaDialogTitle").textContent="Ubah Data Warga"; $("wargaDialog").showModal();};
+window.hapusWarga=async id=>{if(!(await requireAdmin()))return; if(confirm("Hapus data warga ini?"))await deleteDoc(doc(db,"warga",id));};
 
-$("addKasBtn").onclick=()=>{ $("kasForm").reset(); $("kasId").value=""; $("kasTanggal").value=new Date().toISOString().slice(0,10); $("kasDialogTitle").textContent="Tambah Transaksi"; $("kasDialog").showModal(); };
-$("kasForm").addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return;
+$("addKasBtn").onclick=async()=>{ if(!(await requireAdmin()))return; $("kasForm").reset(); $("kasId").value=""; $("kasTanggal").value=new Date().toISOString().slice(0,10); $("kasDialogTitle").textContent="Tambah Transaksi"; $("kasDialog").showModal(); };
+$("kasForm").addEventListener("submit",async e=>{e.preventDefault(); if(!(await requireAdmin()))return;
  const data={tanggal:$("kasTanggal").value,keterangan:$("kasKeterangan").value.trim(),jenis:$("kasJenis").value,nominal:+$("kasNominal").value,updatedAt:new Date().toISOString()};
  const id=$("kasId").value; if(id) await updateDoc(doc(db,"kas",id),data); else await addDoc(collection(db,"kas"),data); $("kasDialog").close();
 });
-window.editKas=id=>{const k=kasCache.find(x=>x.id===id); if(!k)return; $("kasId").value=id;$("kasTanggal").value=k.tanggal;$("kasKeterangan").value=k.keterangan;$("kasJenis").value=k.jenis;$("kasNominal").value=k.nominal;$("kasDialogTitle").textContent="Ubah Transaksi";$("kasDialog").showModal();};
-window.hapusKas=async id=>{if(confirm("Hapus transaksi ini?"))await deleteDoc(doc(db,"kas",id));};
+window.editKas=async id=>{ if(!(await requireAdmin()))return;const k=kasCache.find(x=>x.id===id); if(!k)return; $("kasId").value=id;$("kasTanggal").value=k.tanggal;$("kasKeterangan").value=k.keterangan;$("kasJenis").value=k.jenis;$("kasNominal").value=k.nominal;$("kasDialogTitle").textContent="Ubah Transaksi";$("kasDialog").showModal();};
+window.hapusKas=async id=>{if(!(await requireAdmin()))return; if(confirm("Hapus transaksi ini?"))await deleteDoc(doc(db,"kas",id));};
