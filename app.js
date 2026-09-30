@@ -1,144 +1,38 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-// GANTI konfigurasi berikut dengan konfigurasi proyek Firebase Anda.
-const firebaseConfig = {
-  apiKey: "GANTI_API_KEY",
-  authDomain: "GANTI_PROJECT_ID.firebaseapp.com",
-  projectId: "GANTI_PROJECT_ID",
-  storageBucket: "GANTI_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "GANTI_MESSAGING_SENDER_ID",
-  appId: "GANTI_APP_ID"
-};
+const firebaseConfig={apiKey:"GANTI_API_KEY",authDomain:"GANTI_PROJECT_ID.firebaseapp.com",projectId:"GANTI_PROJECT_ID",storageBucket:"GANTI_PROJECT_ID.firebasestorage.app",messagingSenderId:"GANTI_SENDER_ID",appId:"GANTI_APP_ID"};
+const configured=!firebaseConfig.apiKey.startsWith("GANTI_");
+let db=null,auth=null,role=null,warga=[],kas=[];
+if(configured){const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);onAuthStateChanged(auth,async user=>{if(!user){setRole(null);return}try{const s=await getDocs(collection(db,"users"));const u=s.docs.find(x=>x.id===user.uid);const r=u?.data()?.role;if(!["ketua","bendahara"].includes(r)){await signOut(auth);setRole(null);return}setRole(r)}catch(e){console.error(e);setRole(null)}})}
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const $=id=>document.getElementById(id), rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+const age=d=>{if(!d)return null;const b=new Date(d),t=new Date();let a=t.getFullYear()-b.getFullYear();if(t.getMonth()<b.getMonth()||(t.getMonth()===b.getMonth()&&t.getDate()<b.getDate()))a--;return a};
+const group=a=>a==null?"-":a<=5?"0-5":a<=12?"6-12":a<=17?"13-17":a<=59?"18-59":"60+";
+const mask=v=>v&&v.length>=8?v.slice(0,4)+"********"+v.slice(-4):"********";
+function setRole(r){role=r;document.querySelectorAll(".admin-only").forEach(x=>x.classList.toggle("hidden",!r||(!["ketua","bendahara"].includes(r))));document.querySelectorAll(".admin-col").forEach(x=>x.style.display=r?"table-cell":"none");renderWarga();renderKas();}
+function page(id){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));$(id).classList.add("active");document.querySelectorAll(".bottom-nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===id));}
+document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>page(b.dataset.page));
 
-const $ = id => document.getElementById(id);
-const rupiah = n => new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n||0);
-const mask = (v) => v ? v.slice(0,4)+"********"+v.slice(-4) : "";
-let role = "warga", wargaCache=[], kasCache=[];
+async function load(){if(!configured){sample();return}try{const [w,k]=await Promise.all([getDocs(collection(db,"warga_public")),getDocs(collection(db,"kas"))]);warga=w.docs.map(d=>({id:d.id,...d.data()}));kas=k.docs.map(d=>({id:d.id,...d.data()}));renderAll()}catch(e){console.error(e);sample()}}
+function sample(){warga=[];kas=[];renderAll()}
+function renderAll(){renderWarga();renderKas();stats();}
+function stats(){const total=warga.length,kk=warga.filter(x=>x.status==="Kepala Keluarga").length,l=warga.filter(x=>x.jk==="Laki-laki").length,p=warga.filter(x=>x.jk==="Perempuan").length;$("totalWarga").textContent=total;$("totalKK").textContent=kk;$("totalLaki").textContent=l;$("totalPerempuan").textContent=p;$("sTotal").textContent=total;$("sKK").textContent=kk;$("sL").textContent=l;$("sP").textContent=p;const g={"0-5":0,"6-12":0,"13-17":0,"18-59":0,"60+":0};warga.forEach(x=>{const a=group(age(x.tanggal));if(g[a]!=null)g[a]++});const html=Object.entries(g).map(([k,v])=>`<div class="age-item"><small>${k} tahun</small><b>${v}</b></div>`).join("");$("umurStats").innerHTML=html;$("sAge").innerHTML=html;const masuk=kas.filter(x=>x.jenis==="masuk").reduce((s,x)=>s+Number(x.nominal||0),0),keluar=kas.filter(x=>x.jenis==="keluar").reduce((s,x)=>s+Number(x.nominal||0),0);$("masuk").textContent=rupiah(masuk);$("keluar").textContent=rupiah(keluar);$("saldo").textContent=rupiah(masuk-keluar);$("kasMasuk").textContent=rupiah(masuk);$("kasKeluar").textContent=rupiah(keluar);$("kasSaldo").textContent=rupiah(masuk-keluar)}
+function renderWarga(){const q=$("search")?.value.toLowerCase()||"",jk=$("filterJK")?.value||"",st=$("filterStatus")?.value||"",ug=$("filterUmur")?.value||"";const rows=warga.filter(x=>(x.nama||"").toLowerCase().includes(q)&&(!jk||x.jk===jk)&&(!st||x.status===st)&&(!ug||group(age(x.tanggal))===ug));$("wargaBody").innerHTML=rows.length?rows.map(x=>`<tr><td><b>${esc(x.nama)}</b></td><td>${esc(x.nikMask||"********")}</td><td>${esc(x.kkMask||"********")}</td><td>${esc(x.tempat||"")}, ${fmt(x.tanggal)}</td><td>${esc(x.jk||"")}</td><td>${esc(x.status||"")}</td><td class="admin-col" style="display:${role?"table-cell":"none"}"><button class="edit" onclick="editWarga('${x.id}')">Edit</button> <button class="delete" onclick="hapusWarga('${x.id}')">Hapus</button></td></tr>`).join(""):`<tr><td colspan="7" class="empty">Belum ada data warga.</td></tr>`}
+function renderKas(){kas.sort((a,b)=>(b.tanggal||"").localeCompare(a.tanggal||"));$("kasBody").innerHTML=kas.length?kas.map(x=>`<tr><td>${fmt(x.tanggal)}</td><td>${esc(x.keterangan||"")}</td><td>${x.jenis==="masuk"?rupiah(x.nominal):"-"}</td><td>${x.jenis==="keluar"?rupiah(x.nominal):"-"}</td><td class="admin-col" style="display:${role?"table-cell":"none"}"><button class="edit" onclick="editKas('${x.id}')">Edit</button> <button class="delete" onclick="hapusKas('${x.id}')">Hapus</button></td></tr>`).join(""):`<tr><td colspan="5" class="empty">Belum ada transaksi.</td></tr>`;stats()}
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fmt=d=>d?new Date(d+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"}):"-";
 
-function isAdmin(){ return role==="ketua" || role==="bendahara"; }
-
-async function loadRole(user){
-  // Sederhana dan aman untuk tahap awal: role ditentukan dari custom claims.
-  // Atur custom claim 'role' = 'ketua' atau 'bendahara' melalui Admin SDK/Cloud Functions.
-  const token = await user.getIdTokenResult(true);
-  role = token.claims.role || "warga";
-  $("roleLabel").textContent = role==="ketua" ? "Ketua RT" : role==="bendahara" ? "Bendahara/Petugas" : "Warga";
-  document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.toggle("hidden", !isAdmin()));
-}
-
-// Aplikasi terbuka tanpa login.
-// Semua orang dapat melihat dashboard/data yang diizinkan.
-// Tindakan tambah/edit/hapus meminta password admin.
-// Password TIDAK disimpan di browser; validasi dilakukan melalui Firebase Authentication.
-let adminMode = false;
-
-async function adminLogin() {
-  const email = prompt("Masukkan email akun Ketua RT/Bendahara:");
-  if (!email) return false;
-  const password = prompt("Masukkan password:");
-  if (!password) return false;
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    const token = await auth.currentUser.getIdTokenResult(true);
-    const r = token.claims.role;
-    if (r !== "ketua" && r !== "bendahara") {
-      await signOut(auth);
-      alert("Akun ini tidak memiliki hak pengelolaan.");
-      return false;
-    }
-    role = r;
-    adminMode = true;
-    $("roleLabel").textContent = r==="ketua" ? "Mode Ketua RT" : "Mode Bendahara";
-    document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.remove("hidden"));
-    renderWarga(); renderKas();
-    return true;
-  } catch (err) {
-    alert("Email atau password salah.");
-    return false;
-  }
-}
-
-function requireAdmin() {
-  if (adminMode) return Promise.resolve(true);
-  return adminLogin();
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  $("appView").classList.remove("hidden");
-  $("logoutBtn").classList.add("hidden");
-  subscribeWarga();
-  subscribeKas();
-  renderDashboard();
-});
-
-$("logoutBtn").onclick=async()=>{ await signOut(auth); adminMode=false; role="warga"; document.querySelectorAll(".admin-only,.admin-col").forEach(el=>el.classList.add("hidden")); renderWarga(); renderKas(); };
-
-document.querySelectorAll(".tabs button").forEach(btn=>btn.onclick=()=>{
-  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-  btn.classList.add("active"); $(btn.dataset.tab).classList.add("active");
-});
-
-function subscribeWarga(){
-  onSnapshot(query(collection(db,"warga"),orderBy("nama")), snap=>{
-    wargaCache=snap.docs.map(d=>({id:d.id,...d.data()})); renderWarga(); renderDashboard();
-  });
-}
-function subscribeKas(){
-  onSnapshot(query(collection(db,"kas"),orderBy("tanggal","desc")), snap=>{
-    kasCache=snap.docs.map(d=>({id:d.id,...d.data()})); renderKas(); renderDashboard();
-  });
-}
-function renderWarga(){
-  $("wargaBody").innerHTML=wargaCache.map(w=>`<tr>
-    <td>${esc(w.nama)}</td><td>${mask(w.nik)}</td><td>${mask(w.kk)}</td>
-    <td>${esc(w.tempatLahir||"")}, ${esc(w.tanggalLahir||"")}</td><td>${esc(w.jenisKelamin)}</td><td>${esc(w.statusKeluarga)}</td>
-    ${isAdmin()?`<td><button onclick="editWarga('${w.id}')">Edit</button> <button class="danger" onclick="hapusWarga('${w.id}')">Hapus</button></td>`:""}
-  </tr>`).join("");
-}
-function renderKas(){
-  $("kasBody").innerHTML=kasCache.map(k=>`<tr>
-    <td>${esc(k.tanggal)}</td><td>${esc(k.keterangan)}</td>
-    <td>${k.jenis==="masuk"?rupiah(k.nominal):"-"}</td><td>${k.jenis==="keluar"?rupiah(k.nominal):"-"}</td>
-    ${isAdmin()?`<td><button onclick="editKas('${k.id}')">Edit</button> <button class="danger" onclick="hapusKas('${k.id}')">Hapus</button></td>`:""}
-  </tr>`).join("");
-  const masuk=kasCache.filter(x=>x.jenis==="masuk").reduce((a,b)=>a+(+b.nominal||0),0);
-  const keluar=kasCache.filter(x=>x.jenis==="keluar").reduce((a,b)=>a+(+b.nominal||0),0);
-  $("totalMasuk").textContent=rupiah(masuk); $("totalKeluar").textContent=rupiah(keluar); $("saldoKas").textContent=rupiah(masuk-keluar);
-}
-function renderDashboard(){
-  const total=wargaCache.length, kk=wargaCache.filter(w=>w.statusKeluarga==="Kepala Keluarga").length;
-  $("totalWarga").textContent=total; $("totalKK").textContent=kk;
-  $("laki").textContent=wargaCache.filter(w=>w.jenisKelamin==="Laki-laki").length;
-  $("perempuan").textContent=wargaCache.filter(w=>w.jenisKelamin==="Perempuan").length;
-  const groups={"0–5":0,"6–12":0,"13–17":0,"18–59":0,"60+":0};
-  wargaCache.forEach(w=>{const a=age(w.tanggalLahir); if(a<6)groups["0–5"]++; else if(a<13)groups["6–12"]++; else if(a<18)groups["13–17"]++; else if(a<60)groups["18–59"]++; else groups["60+"]++;});
-  $("umurStats").innerHTML=Object.entries(groups).map(([k,v])=>`<div><span>${k} tahun</span><br><b>${v}</b> warga</div>`).join("");
-  const masuk=kasCache.filter(x=>x.jenis==="masuk").reduce((a,b)=>a+(+b.nominal||0),0);
-  const keluar=kasCache.filter(x=>x.jenis==="keluar").reduce((a,b)=>a+(+b.nominal||0),0);
-  $("saldo").textContent=rupiah(masuk-keluar);
-}
-function age(d){if(!d)return 0;const b=new Date(d),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-
-$("addWargaBtn").onclick=async()=>{ if(!(await requireAdmin()))return; $("wargaForm").reset(); $("wargaId").value=""; $("wargaDialogTitle").textContent="Tambah Warga"; $("wargaDialog").showModal(); };
-$("wargaForm").addEventListener("submit",async e=>{e.preventDefault(); if(!(await requireAdmin()))return;
- const data={nama:$("nama").value.trim(),nik:$("nik").value.trim(),kk:$("kk").value.trim(),tempatLahir:$("tempatLahir").value.trim(),tanggalLahir:$("tanggalLahir").value,jenisKelamin:$("jenisKelamin").value,statusKeluarga:$("statusKeluarga").value,alamat:$("alamat").value.trim(),updatedAt:new Date().toISOString()};
- const id=$("wargaId").value; if(id) await updateDoc(doc(db,"warga",id),data); else await addDoc(collection(db,"warga"),data); $("wargaDialog").close();
-});
-window.editWarga=async id=>{ if(!(await requireAdmin()))return;const w=wargaCache.find(x=>x.id===id); if(!w)return; $("wargaId").value=id; for(const [k,v] of Object.entries({nama:w.nama,nik:w.nik,kk:w.kk,tempatLahir:w.tempatLahir,tanggalLahir:w.tanggalLahir,jenisKelamin:w.jenisKelamin,statusKeluarga:w.statusKeluarga,alamat:w.alamat}))$(k).value=v||""; $("wargaDialogTitle").textContent="Ubah Data Warga"; $("wargaDialog").showModal();};
-window.hapusWarga=async id=>{if(!(await requireAdmin()))return; if(confirm("Hapus data warga ini?"))await deleteDoc(doc(db,"warga",id));};
-
-$("addKasBtn").onclick=async()=>{ if(!(await requireAdmin()))return; $("kasForm").reset(); $("kasId").value=""; $("kasTanggal").value=new Date().toISOString().slice(0,10); $("kasDialogTitle").textContent="Tambah Transaksi"; $("kasDialog").showModal(); };
-$("kasForm").addEventListener("submit",async e=>{e.preventDefault(); if(!(await requireAdmin()))return;
- const data={tanggal:$("kasTanggal").value,keterangan:$("kasKeterangan").value.trim(),jenis:$("kasJenis").value,nominal:+$("kasNominal").value,updatedAt:new Date().toISOString()};
- const id=$("kasId").value; if(id) await updateDoc(doc(db,"kas",id),data); else await addDoc(collection(db,"kas"),data); $("kasDialog").close();
-});
-window.editKas=async id=>{ if(!(await requireAdmin()))return;const k=kasCache.find(x=>x.id===id); if(!k)return; $("kasId").value=id;$("kasTanggal").value=k.tanggal;$("kasKeterangan").value=k.keterangan;$("kasJenis").value=k.jenis;$("kasNominal").value=k.nominal;$("kasDialogTitle").textContent="Ubah Transaksi";$("kasDialog").showModal();};
-window.hapusKas=async id=>{if(!(await requireAdmin()))return; if(confirm("Hapus transaksi ini?"))await deleteDoc(doc(db,"kas",id));};
+$("search").oninput=renderWarga;["filterJK","filterStatus","filterUmur"].forEach(id=>$(id).onchange=renderWarga);
+$("manageBtn").onclick=()=>{if(role){signOut(auth);return}$("adminError").textContent="";$("adminDialog").showModal()};
+$("adminForm").onsubmit=async e=>{e.preventDefault();if(!configured){$("adminError").textContent="Isi firebaseConfig di app.js terlebih dahulu.";return}try{await signInWithEmailAndPassword(auth,$("adminEmail").value,$("adminPassword").value);$("adminDialog").close();}catch(err){$("adminError").textContent="Email/password tidak cocok atau akun belum disiapkan."}};
+$("addWarga").onclick=()=>{if(role!=="ketua")return;$("wTitle").textContent="Tambah Warga";$("wargaForm").reset();$("wId").value="";$("wargaDialog").showModal()};
+$("wargaForm").onsubmit=async e=>{e.preventDefault();if(role!=="ketua")return;const id=$("wId").value,full={nama:$('wNama').value.trim(),nik:$('wNik').value.trim(),kk:$('wKk').value.trim(),tempat:$('wTempat').value.trim(),tanggal:$('wTanggal').value,jk:$('wJk').value,status:$('wStatus').value,alamat:$('wAlamat').value.trim(),updatedAt:Date.now()};if(!/^\d{16}$/.test(full.nik)||!/^\d{16}$/.test(full.kk)){alert("NIK dan No. KK harus 16 digit.");return}const pub={nama:full.nama,nikMask:mask(full.nik),kkMask:mask(full.kk),tempat:full.tempat,tanggal:full.tanggal,jk:full.jk,status:full.status};try{if(!configured){alert("Firebase belum dikonfigurasi.");return}if(id){await updateDoc(doc(db,"warga_private",id),full);await setDoc(doc(db,"warga_public",id),pub); }else{const r=await addDoc(collection(db,"warga_private"),full);await setDoc(doc(db,"warga_public",r.id),pub)}$("wargaDialog").close();await load()}catch(err){alert("Gagal menyimpan data: "+err.message)}};
+window.editWarga=async id=>{if(role!=="ketua")return;if(!configured)return;const all=await getDocs(collection(db,"warga_private"));const d=all.docs.find(x=>x.id===id);if(!d)return;const x=d.data();$("wTitle").textContent="Edit Warga";$("wId").value=id;$("wNama").value=x.nama||"";$("wNik").value=x.nik||"";$("wKk").value=x.kk||"";$("wTempat").value=x.tempat||"";$("wTanggal").value=x.tanggal||"";$("wJk").value=x.jk||"Laki-laki";$("wStatus").value=x.status||"Anak";$("wAlamat").value=x.alamat||"";$("wargaDialog").showModal()};
+window.hapusWarga=async id=>{if(role!=="ketua"||!confirm("Hapus data warga ini?"))return;await deleteDoc(doc(db,"warga_private",id));await deleteDoc(doc(db,"warga_public",id));await load()};
+$("addKas").onclick=()=>{if(!role)return;$("kTitle").textContent="Tambah Transaksi";$("kasForm").reset();$("kId").value="";$("kTanggal").value=new Date().toISOString().slice(0,10);$("kasDialog").showModal()};
+$("kasForm").onsubmit=async e=>{e.preventDefault();if(!role)return;const id=$("kId").value,data={tanggal:$('kTanggal').value,keterangan:$('kKet').value.trim(),jenis:$('kJenis').value,nominal:Number($('kNominal').value||0),updatedAt:Date.now()};try{if(!configured)return alert("Firebase belum dikonfigurasi.");if(id)await updateDoc(doc(db,"kas",id),data);else await addDoc(collection(db,"kas"),data);$("kasDialog").close();await load()}catch(err){alert("Gagal menyimpan transaksi: "+err.message)}};
+window.editKas=async id=>{if(!role)return;const x=kas.find(k=>k.id===id);if(!x)return;$("kTitle").textContent="Edit Transaksi";$("kId").value=id;$("kTanggal").value=x.tanggal||"";$("kKet").value=x.keterangan||"";$("kJenis").value=x.jenis||"masuk";$("kNominal").value=x.nominal||0;$("kasDialog").showModal()};
+window.hapusKas=async id=>{if(!role||!confirm("Hapus transaksi ini?"))return;await deleteDoc(doc(db,"kas",id));await load()};
+load();
