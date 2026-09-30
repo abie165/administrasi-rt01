@@ -4,12 +4,12 @@ import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot
 
 // GANTI konfigurasi berikut dengan konfigurasi proyek Firebase Anda.
 const firebaseConfig = {
-  apiKey: "GANTI_API_KEY",
-  authDomain: "GANTI_PROJECT_ID.firebaseapp.com",
-  projectId: "GANTI_PROJECT_ID",
-  storageBucket: "GANTI_PROJECT_ID.firebasestorage.app",
-  messagingSenderId: "GANTI_MESSAGING_SENDER_ID",
-  appId: "GANTI_APP_ID"
+  apiKey: "AIzaSyDiklmp3N0o0kMRy84LkzUguvCEmFVSluM",
+  authDomain: "administrasi-rt01.firebaseapp.com",
+  projectId: "administrasi-rt01",
+  storageBucket: "administrasi-rt01.firebasestorage.app",
+  messagingSenderId: "143863042733",
+  appId: "1:143863042733:web:137940acec212002316c24"
 };
 
 const app = initializeApp(firebaseConfig);
