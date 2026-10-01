@@ -1,22 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function isAdmin() {
-      return signedIn() &&
-        (request.auth.token.role == "ketua" || request.auth.token.role == "bendahara");
-    }
-
-    // Dashboard/data can be read publicly by the app.
-    // Writes remain restricted to Ketua RT/Bendahara.
-    match /warga/{id} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /kas/{id} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
+    function signedIn(){ return request.auth != null; }
+    function role(){ return signedIn() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null; }
+    function ketua(){ return role() == 'ketua'; }
+    function bendahara(){ return role() == 'bendahara'; }
+    function pengelola(){ return ketua() || bendahara(); }
+    match /warga_public/{id} { allow read: if true; allow create, update, delete: if ketua(); }
+    match /warga_private/{id} { allow read, create, update, delete: if ketua(); }
+    match /kas/{id} { allow read: if true; allow create, update, delete: if pengelola(); }
+    match /users/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
   }
 }
