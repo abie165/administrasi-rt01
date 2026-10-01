@@ -1,100 +1,35 @@
 <!doctype html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Administrasi RT-01</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e"><meta name="description" content="Aplikasi Administrasi RT">
+<title>Administrasi RT</title><link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="topbar">
-    <div><strong>Administrasi RT-01 (Data Warga-Keuangan)</strong><small id="roleLabel"></small></div>
-    <button id="logoutBtn" class="secondary hidden">Keluar</button>
-  </header>
-
-  <main class="container">
-<section id="appView">
-      <nav class="tabs">
-        <button data-tab="dashboard" class="active">Dashboard</button>
-        <button data-tab="warga">Data Warga</button>
-        <button data-tab="kas">Kas RT</button>
-      </nav>
-
-      <section id="dashboard" class="tab active">
-        <h2>Dashboard</h2>
-        <div class="stats">
-          <div class="stat"><span>Total Warga</span><b id="totalWarga">0</b></div>
-          <div class="stat"><span>Kepala Keluarga</span><b id="totalKK">0</b></div>
-          <div class="stat"><span>Laki-laki</span><b id="laki">0</b></div>
-          <div class="stat"><span>Perempuan</span><b id="perempuan">0</b></div>
-          <div class="stat"><span>Saldo Kas</span><b id="saldo">Rp0</b></div>
-        </div>
-        <div class="card">
-          <h3>Kelompok Umur</h3>
-          <div id="umurStats" class="age-grid"></div>
-        </div>
-      </section>
-
-      <section id="warga" class="tab">
-        <div class="section-head">
-          <div><h2>Data Warga</h2><p>Warga hanya melihat data yang telah disamarkan.</p></div>
-          <button id="addWargaBtn" class="admin-only hidden">+ Tambah Warga</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Nama</th><th>NIK</th><th>No. KK</th><th>Tempat/Tgl Lahir</th><th>JK</th><th>Status Keluarga</th><th class="admin-col">Aksi</th></tr></thead>
-            <tbody id="wargaBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section id="kas" class="tab">
-        <div class="section-head">
-          <div><h2>Laporan Keuangan Kas RT</h2><p>Transaksi dan saldo dapat dilihat warga.</p></div>
-          <button id="addKasBtn" class="admin-only hidden">+ Tambah Transaksi</button>
-        </div>
-        <div class="stats">
-          <div class="stat"><span>Total Pemasukan</span><b id="totalMasuk">Rp0</b></div>
-          <div class="stat"><span>Total Pengeluaran</span><b id="totalKeluar">Rp0</b></div>
-          <div class="stat"><span>Saldo</span><b id="saldoKas">Rp0</b></div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Pemasukan</th><th>Pengeluaran</th><th class="admin-col">Aksi</th></tr></thead>
-            <tbody id="kasBody"></tbody>
-          </table>
-        </div>
-      </section>
-    </section>
-  </main>
-
-  <dialog id="wargaDialog">
-    <form method="dialog" id="wargaForm" class="dialog-form">
-      <h3 id="wargaDialogTitle">Tambah Warga</h3>
-      <input id="wargaId" type="hidden">
-      <label>Nama lengkap<input id="nama" required></label>
-      <label>NIK (16 digit)<input id="nik" inputmode="numeric" minlength="16" maxlength="16" required></label>
-      <label>No. KK (16 digit)<input id="kk" inputmode="numeric" minlength="16" maxlength="16" required></label>
-      <div class="two"><label>Tempat lahir<input id="tempatLahir" required></label><label>Tanggal lahir<input id="tanggalLahir" type="date" required></label></div>
-      <label>Jenis kelamin<select id="jenisKelamin"><option>Laki-laki</option><option>Perempuan</option></select></label>
-      <label>Status dalam keluarga<select id="statusKeluarga"><option>Kepala Keluarga</option><option>Istri</option><option>Ibu</option><option>Bapak</option><option>Anak</option><option>Saudara</option></select></label>
-      <label>Alamat<input id="alamat"></label>
-      <div class="dialog-actions"><button type="button" class="secondary" onclick="wargaDialog.close()">Batal</button><button type="submit">Simpan</button></div>
-    </form>
-  </dialog>
-
-  <dialog id="kasDialog">
-    <form method="dialog" id="kasForm" class="dialog-form">
-      <h3 id="kasDialogTitle">Tambah Transaksi</h3>
-      <input id="kasId" type="hidden">
-      <label>Tanggal<input id="kasTanggal" type="date" required></label>
-      <label>Keterangan<input id="kasKeterangan" required></label>
-      <label>Jenis<select id="kasJenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select></label>
-      <label>Nominal (Rp)<input id="kasNominal" type="number" min="0" required></label>
-      <div class="dialog-actions"><button type="button" class="secondary" onclick="kasDialog.close()">Batal</button><button type="submit">Simpan</button></div>
-    </form>
-  </dialog>
-
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+<header class="topbar"><div><div class="brand">🏠 Administrasi RT</div><div class="subbrand" id="rtName">RT • Kelurahan</div></div><button id="manageBtn" class="manage">Pengelola</button></header>
+<main class="wrap">
+<section id="dashboard" class="page active">
+<div class="hero"><div><span class="eyebrow">DASHBOARD</span><h1>Informasi RT</h1><p>Data kependudukan dan kas RT yang mudah dilihat dari HP.</p></div><div class="live">● Online</div></div>
+<div class="stats"><article><span>👥 Total Warga</span><strong id="totalWarga">0</strong></article><article><span>🏠 Kepala Keluarga</span><strong id="totalKK">0</strong></article><article><span>👨 Laki-laki</span><strong id="totalLaki">0</strong></article><article><span>👩 Perempuan</span><strong id="totalPerempuan">0</strong></article></div>
+<div class="card"><div class="card-head"><div><h2>Kas RT</h2><small>Ringkasan keuangan</small></div><strong id="saldo">Rp0</strong></div><div class="money"><div><span>Pemasukan</span><b id="masuk">Rp0</b></div><div><span>Pengeluaran</span><b id="keluar">Rp0</b></div></div></div>
+<div class="card"><div class="card-head"><div><h2>Kelompok Umur</h2><small>Jumlah warga</small></div></div><div id="umurStats" class="age-grid"></div></div>
+</section>
+<section id="warga" class="page">
+<div class="page-title"><div><span class="eyebrow">KEPENDUDUKAN</span><h1>Data Warga</h1></div><button id="addWarga" class="admin-only hidden">＋ Warga</button></div>
+<div class="filters"><input id="search" placeholder="🔎 Cari nama warga…" autocomplete="off"><select id="filterJK"><option value="">Semua jenis kelamin</option><option>Laki-laki</option><option>Perempuan</option></select><select id="filterStatus"><option value="">Semua status keluarga</option><option>Kepala Keluarga</option><option>Istri</option><option>Ibu</option><option>Bapak</option><option>Anak</option><option>Saudara</option></select><select id="filterUmur"><option value="">Semua umur</option><option value="0-5">0–5 tahun</option><option value="6-12">6–12 tahun</option><option value="13-17">13–17 tahun</option><option value="18-59">18–59 tahun</option><option value="60+">60 tahun ke atas</option></select></div>
+<p class="privacy">🔒 NIK dan No. KK tidak ditampilkan utuh kepada warga.</p>
+<div class="table-card"><div class="table-wrap"><table><thead><tr><th>Nama</th><th>NIK</th><th>No. KK</th><th>Lahir</th><th>JK</th><th>Status</th><th class="admin-col">Aksi</th></tr></thead><tbody id="wargaBody"></tbody></table></div></div>
+</section>
+<section id="kas" class="page">
+<div class="page-title"><div><span class="eyebrow">KEUANGAN</span><h1>Kas RT</h1></div><button id="addKas" class="admin-only hidden">＋ Transaksi</button></div>
+<div class="money-cards"><article><span>Pemasukan</span><b id="kasMasuk">Rp0</b></article><article><span>Pengeluaran</span><b id="kasKeluar">Rp0</b></article><article><span>Saldo</span><b id="kasSaldo">Rp0</b></article></div>
+<div class="table-card"><div class="table-wrap"><table><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Pemasukan</th><th>Pengeluaran</th><th class="admin-col">Aksi</th></tr></thead><tbody id="kasBody"></tbody></table></div></div>
+</section>
+<section id="statistik" class="page"><div class="page-title"><div><span class="eyebrow">ANALISIS</span><h1>Statistik Warga</h1></div></div><div class="stats"><article><span>Total warga</span><strong id="sTotal">0</strong></article><article><span>Kepala keluarga</span><strong id="sKK">0</strong></article><article><span>Laki-laki</span><strong id="sL">0</strong></article><article><span>Perempuan</span><strong id="sP">0</strong></article></div><div class="card"><h2>Kelompok umur</h2><div id="sAge" class="age-grid"></div></div></section>
+</main>
+<nav class="bottom-nav"><button data-page="dashboard" class="active">🏠<span>Beranda</span></button><button data-page="warga">👥<span>Warga</span></button><button data-page="kas">💰<span>Kas</span></button><button data-page="statistik">📊<span>Statistik</span></button></nav>
+<dialog id="adminDialog"><form method="dialog" id="adminForm"><h2>Masuk Pengelola</h2><p>Hanya Ketua RT atau Bendahara yang dapat mengubah data.</p><label>Email<input id="adminEmail" type="email" required></label><label>Password<input id="adminPassword" type="password" required></label><div class="dialog-actions"><button value="cancel" class="secondary">Batal</button><button value="ok">Masuk</button></div><small id="adminError" class="error"></small></form></dialog>
+<dialog id="wargaDialog"><form method="dialog" id="wargaForm"><h2 id="wTitle">Tambah Warga</h2><input id="wId" type="hidden"><label>Nama<input id="wNama" required></label><label>NIK 16 digit<input id="wNik" inputmode="numeric" maxlength="16" minlength="16" required></label><label>No. KK 16 digit<input id="wKk" inputmode="numeric" maxlength="16" minlength="16" required></label><div class="two"><label>Tempat lahir<input id="wTempat" required></label><label>Tanggal lahir<input id="wTanggal" type="date" required></label></div><label>Jenis kelamin<select id="wJk"><option>Laki-laki</option><option>Perempuan</option></select></label><label>Status keluarga<select id="wStatus"><option>Kepala Keluarga</option><option>Istri</option><option>Ibu</option><option>Bapak</option><option>Anak</option><option>Saudara</option></select></label><label>Alamat<input id="wAlamat"></label><div class="dialog-actions"><button type="button" class="secondary" onclick="wargaDialog.close()">Batal</button><button>Simpan</button></div></form></dialog>
+<dialog id="kasDialog"><form method="dialog" id="kasForm"><h2 id="kTitle">Tambah Transaksi</h2><input id="kId" type="hidden"><label>Tanggal<input id="kTanggal" type="date" required></label><label>Keterangan<input id="kKet" required></label><label>Jenis<select id="kJenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select></label><label>Nominal<input id="kNominal" type="number" min="0" required></label><div class="dialog-actions"><button type="button" class="secondary" onclick="kasDialog.close()">Batal</button><button>Simpan</button></div></form></dialog>
+<script type="module" src="app.js"></script>
+</body></html>
