@@ -1,14 +1,44 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn(){ return request.auth != null; }
-    function role(){ return signedIn() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role : null; }
-    function ketua(){ return role() == 'ketua'; }
-    function bendahara(){ return role() == 'bendahara'; }
-    function pengelola(){ return ketua() || bendahara(); }
-    match /warga_public/{id} { allow read: if true; allow create, update, delete: if ketua(); }
-    match /warga_private/{id} { allow read, create, update, delete: if ketua(); }
-    match /kas/{id} { allow read: if true; allow create, update, delete: if pengelola(); }
-    match /users/{uid} { allow read: if signedIn() && request.auth.uid == uid; allow write: if false; }
+
+    // Hanya akun yang memiliki dokumen users/{UID} dengan role "pengelola"
+    // yang boleh menambah, mengubah, atau menghapus data.
+    function isPengelola() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "pengelola";
+    }
+
+    // Data yang memang ditampilkan kepada warga.
+    // Warga tidak perlu login untuk melihatnya.
+    match /warga_public/{id} {
+      allow read: if true;
+      allow create, update, delete: if isPengelola();
+    }
+
+    // NIK, KK, dan alamat lengkap hanya untuk pengelola.
+    match /warga_private/{id} {
+      allow read, create, update, delete: if isPengelola();
+    }
+
+    // Laporan kas boleh dilihat warga tanpa login.
+    // Perubahan hanya boleh dilakukan pengelola.
+    match /kas/{id} {
+      allow read: if true;
+      allow create, update, delete: if isPengelola();
+    }
+
+    // Dokumen identitas peran. Tidak boleh dibuat/diubah dari aplikasi.
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Semua koleksi lain ditutup.
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
