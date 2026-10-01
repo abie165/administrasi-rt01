@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebas
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-const firebaseConfig={apiKey:"GANTI_API_KEY",authDomain:"GANTI_PROJECT_ID.firebaseapp.com",projectId:"GANTI_PROJECT_ID",storageBucket:"GANTI_PROJECT_ID.firebasestorage.app",messagingSenderId:"GANTI_SENDER_ID",appId:"GANTI_APP_ID"};
+const firebaseConfig={apiKey:"AIzaSyDiklmp3N0o0kMRy84LkzUguvCEmFVSluM",authDomain:"administrasi-rt01.firebaseapp.com",projectId:"administrasi-rt01",storageBucket:"administrasi-rt01.firebasestorage.app",messagingSenderId:"143863042733",appId:"1:143863042733:web:137940acec212002316c24"};
 const configured=!firebaseConfig.apiKey.startsWith("GANTI_");
 let db=null,auth=null,role=null,warga=[],kas=[];
 if(configured){const app=initializeApp(firebaseConfig);auth=getAuth(app);db=getFirestore(app);onAuthStateChanged(auth,async user=>{if(!user){setRole(null);return}try{const s=await getDocs(collection(db,"users"));const u=s.docs.find(x=>x.id===user.uid);const r=u?.data()?.role;if(!["ketua","bendahara"].includes(r)){await signOut(auth);setRole(null);return}setRole(r)}catch(e){console.error(e);setRole(null)}})}
