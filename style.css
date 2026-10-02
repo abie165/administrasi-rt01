@@ -501,8 +501,8 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
 }
 
 .warga-scroll{
-  height:520px;                 /* area tampilan ±7 warga */
-  max-height:520px;
+  height:365px;                 /* area tampilan ±7 warga */
+  max-height:365px;
   overflow-y:auto;
   overflow-x:auto;
   scrollbar-gutter:stable;
@@ -568,9 +568,90 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
   height:1px;
 }
 
+/* ---------- DATA KAS: GAYA "FREEZE PANES" EXCEL ---------- */
+.kas-table-card{
+  overflow:hidden;
+}
+
+.kas-scroll{
+  height:365px;                 /* area tampilan ±7 transaksi */
+  max-height:365px;
+  overflow-y:auto;
+  overflow-x:auto;
+  scrollbar-gutter:stable;
+  border-radius:17px;
+}
+
+/* Header kas tetap terlihat saat tabel ditarik ke bawah */
+.kas-table thead th{
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:linear-gradient(90deg,var(--page-soft),#fbfdfd);
+  box-shadow:0 1px 0 var(--line);
+}
+
+.kas-table tbody tr{
+  height:46px;
+}
+
+.kas-scroll::-webkit-scrollbar{
+  width:11px;
+  height:10px;
+}
+.kas-scroll::-webkit-scrollbar-track{
+  background:#edf2f1;
+  border-radius:10px;
+}
+.kas-scroll::-webkit-scrollbar-thumb{
+  background:#a9bfbc;
+  border-radius:10px;
+  border:2px solid #edf2f1;
+}
+.kas-scroll::-webkit-scrollbar-thumb:hover{
+  background:#789b96;
+}
+
+.kas-scroll{
+  scrollbar-width:auto;
+  scrollbar-color:#a9bfbc #edf2f1;
+}
+
+.kas-table tbody tr:last-child td{
+  border-bottom:0;
+}
+
 @media(max-width:760px){
-  .warga-scroll{
-    height:500px;
-    max-height:500px;
+  .warga-scroll,
+  .kas-scroll{
+    height:365px;
+    max-height:365px;
   }
+}
+
+/* ---------- FILTER TRANSAKSI KAS ---------- */
+.kas-filters{
+  margin:0 0 12px;
+}
+.kas-filters input,
+.kas-filters select{
+  min-width:0;
+}
+@media(max-width:760px){
+  .kas-filters{grid-template-columns:1fr 1fr}
+  .kas-filters input{grid-column:1/-1}
+}
+@media(max-width:420px){
+  .kas-filters{grid-template-columns:1fr 1fr}
+  .kas-filters input{grid-column:1/-1}
+}
+
+/* Footer lebih rapat dengan konten, tetap aman dari navigasi bawah. */
+.site-footer{
+  margin-bottom:14px;
+  padding-top:10px;
+  padding-bottom:12px;
+}
+@media(max-width:420px){
+  .site-footer{margin-bottom:14px}
 }
