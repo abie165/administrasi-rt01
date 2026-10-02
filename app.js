@@ -135,6 +135,7 @@ function renderWarga(){
   const jk=$("filterJK")?.value||"";
   const st=$("filterStatus")?.value||"";
   const ug=$("filterUmur")?.value||"";
+
   const rows=warga.filter(x=>
     (x.nama||"").toLowerCase().includes(q)&&
     (!jk||x.jk===jk)&&
@@ -147,7 +148,8 @@ function renderWarga(){
       <td><b>${esc(x.nama)}</b></td>
       <td>${esc(x.nikMask||"********")}</td>
       <td>${esc(x.kkMask||"********")}</td>
-      <td>${esc(x.tempat||"")}, ${fmt(x.tanggal)}</td>
+      <td>${esc(x.tempat||"")}</td>
+      <td>${fmt(x.tanggal)}</td>
       <td>${esc(x.jk||"")}</td>
       <td>${esc(x.status||"")}</td>
       <td class="admin-col" style="display:${role?"table-cell":"none"}">
@@ -155,9 +157,8 @@ function renderWarga(){
         <button class="delete" onclick="hapusWarga('${x.id}')">Hapus</button>
       </td>
     </tr>`).join(""):
-    `<tr><td colspan="7" class="empty">Belum ada data warga.</td></tr>`;
+    `<tr><td colspan="9" class="empty">Belum ada data warga.</td></tr>`;
 }
-
 function renderKas(){
   kas.sort((a,b)=>(b.tanggal||"").localeCompare(a.tanggal||""));
   $("kasBody").innerHTML=kas.length?kas.map(x=>`
@@ -229,7 +230,6 @@ $("wargaForm").onsubmit=async e=>{
     tanggal:$("wTanggal").value,
     jk:$("wJk").value,
     status:$("wStatus").value,
-    alamat:$("wAlamat").value.trim(),
     updatedAt:Date.now()
   };
 
@@ -280,7 +280,6 @@ window.editWarga=async id=>{
     $("wTanggal").value=x.tanggal||"";
     $("wJk").value=x.jk||"Laki-laki";
     $("wStatus").value=x.status||"Anak";
-    $("wAlamat").value=x.alamat||"";
     $("wargaDialog").showModal();
   }catch(err){
     alert("Gagal membuka data warga: "+err.message);
