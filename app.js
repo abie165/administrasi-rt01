@@ -177,7 +177,6 @@ function stats(){
   const g={"0-5":0,"6-12":0,"13-17":0,"18-59":0,"60+":0};
   warga.forEach(x=>{const a=group(age(x.tanggal));if(g[a]!=null)g[a]++});
   const html=Object.entries(g).map(([k,v])=>`<div class="age-item"><small>${k} tahun</small><b>${v}</b></div>`).join("");
-  $("umurStats").innerHTML=html;
   $("sAge").innerHTML=html;
 
   const masuk=kas.filter(x=>x.jenis==="masuk").reduce((s,x)=>s+Number(x.nominal||0),0);
