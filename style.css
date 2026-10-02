@@ -501,7 +501,7 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
 }
 
 .warga-scroll{
-  height:520px;                 /* area tampilan ±10 warga */
+  height:520px;                 /* area tampilan ±7 warga */
   max-height:520px;
   overflow-y:auto;
   overflow-x:auto;
