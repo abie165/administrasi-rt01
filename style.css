@@ -493,3 +493,84 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
   .live{padding:6px 8px;font-size:11px}
   .site-footer{margin-bottom:68px}
 }
+
+
+/* ---------- DATA WARGA: GAYA "FREEZE PANES" EXCEL ---------- */
+.warga-table-card{
+  overflow:hidden;
+}
+
+.warga-scroll{
+  height:520px;                 /* area tampilan ±10 warga */
+  max-height:520px;
+  overflow-y:auto;
+  overflow-x:auto;
+  scrollbar-gutter:stable;
+  border-radius:17px;
+}
+
+/* Header tetap terlihat saat tabel ditarik ke bawah */
+.warga-table thead th{
+  position:sticky;
+  top:0;
+  z-index:5;
+  background:linear-gradient(90deg,var(--page-soft),#fbfdfd);
+  box-shadow:0 1px 0 var(--line);
+}
+
+/* Kolom dibuat mengikuti urutan input */
+.warga-table th:nth-child(1){min-width:185px}
+.warga-table th:nth-child(2),
+.warga-table th:nth-child(3){min-width:135px}
+.warga-table th:nth-child(4){min-width:150px}
+.warga-table th:nth-child(5){min-width:135px}
+.warga-table th:nth-child(6){min-width:130px}
+.warga-table th:nth-child(7){min-width:155px}
+.warga-table th:nth-child(8){min-width:190px}
+.warga-table th:nth-child(9){min-width:115px}
+
+/* Scrollbar kanan dibuat jelas tetapi tetap ringan */
+.warga-scroll::-webkit-scrollbar{
+  width:11px;
+  height:10px;
+}
+.warga-scroll::-webkit-scrollbar-track{
+  background:#edf2f1;
+  border-radius:10px;
+}
+.warga-scroll::-webkit-scrollbar-thumb{
+  background:#a9bfbc;
+  border-radius:10px;
+  border:2px solid #edf2f1;
+}
+.warga-scroll::-webkit-scrollbar-thumb:hover{
+  background:#789b96;
+}
+
+/* Firefox */
+.warga-scroll{
+  scrollbar-width:auto;
+  scrollbar-color:#a9bfbc #edf2f1;
+}
+
+.warga-table tbody tr{
+  height:46px;
+}
+
+.warga-table tbody tr:last-child td{
+  border-bottom:0;
+}
+
+/* Penanda bahwa tabel bisa ditarik ke bawah */
+.warga-scroll::after{
+  content:"";
+  display:block;
+  height:1px;
+}
+
+@media(max-width:760px){
+  .warga-scroll{
+    height:500px;
+    max-height:500px;
+  }
+}
