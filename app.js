@@ -224,7 +224,7 @@ function renderKas(){
   // Isi pilihan tahun dari transaksi yang tersedia, tanpa mengubah data Firebase.
   const yearSelect=$("kasYear");
   const selectedYear=yearSelect.value;
-  const years=[...new Set(kas.map(x=>(x.tanggal||"").slice(0,4)).filter(y=>/^\\d{4}$/.test(y)))].sort().reverse();
+  const years=[...new Set(kas.map(x=>(x.tanggal||"").slice(0,4)).filter(y=>/^\d{4}$/.test(y)))].sort().reverse();
   yearSelect.innerHTML='<option value="">Semua tahun</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join("");
   if(years.includes(selectedYear))yearSelect.value=selectedYear;
 
