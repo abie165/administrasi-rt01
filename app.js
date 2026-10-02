@@ -37,6 +37,8 @@ if(configured){
         setRole(null);
         return;
       }
+      // Data lama yang belum memiliki urutan diinisialisasi sekali oleh pengelola.
+      await migrateWargaOrder();
       setRole("pengelola");
     }catch(e){
       console.error(e);
@@ -88,7 +90,13 @@ async function load(){
       getDocs(collection(db,"warga_public")),
       getDocs(collection(db,"kas"))
     ]);
-    warga=w.docs.map(d=>({id:d.id,...d.data()}));
+    warga=w.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>{
+        const ao=Number.isFinite(Number(a.urutan))?Number(a.urutan):Number.MAX_SAFE_INTEGER;
+        const bo=Number.isFinite(Number(b.urutan))?Number(b.urutan):Number.MAX_SAFE_INTEGER;
+        if(ao!==bo)return ao-bo;
+        return String(a.nama||"").localeCompare(String(b.nama||""),"id");
+      });
     kas=k.docs.map(d=>({id:d.id,...d.data()}));
     renderAll();
   }catch(e){
@@ -97,6 +105,58 @@ async function load(){
   }
 }
 
+async function migrateWargaOrder(){
+  if(role==="pengelola")return;
+  try{
+    const snap=await getDocs(collection(db,"warga_private"));
+    const docs=snap.docs.slice().sort((a,b)=>{
+      const ad=a.data()||{}, bd=b.data()||{};
+      const ao=Number(ad.urutan), bo=Number(bd.urutan);
+      if(Number.isFinite(ao)&&Number.isFinite(bo))return ao-bo;
+      if(Number.isFinite(ao))return -1;
+      if(Number.isFinite(bo))return 1;
+      const at=Number(ad.updatedAt||0), bt=Number(bd.updatedAt||0);
+      if(at!==bt)return at-bt;
+      return a.id.localeCompare(b.id);
+    });
+
+    let maxOrder=0;
+    docs.forEach(d=>{
+      const n=Number(d.data()?.urutan);
+      if(Number.isFinite(n)&&n>maxOrder)maxOrder=n;
+    });
+
+    for(const d of docs){
+      const data=d.data()||{};
+      let order=Number(data.urutan);
+      if(!Number.isFinite(order)){
+        order=++maxOrder;
+        await updateDoc(doc(db,"warga_private",d.id),{urutan:order});
+      }
+
+      const createdAt=Number(data.createdAt||data.updatedAt||Date.now());
+      if(!data.createdAt){
+        await updateDoc(doc(db,"warga_private",d.id),{createdAt});
+      }
+
+      // Sinkronkan metadata urutan ke koleksi publik agar halaman Warga
+      // dapat mengurutkan data tanpa perlu membaca warga_private.
+      await setDoc(doc(db,"warga_public",d.id),{
+        nama:data.nama||"",
+        nikMask:mask(data.nik||""),
+        kkMask:mask(data.kk||""),
+        tempat:data.tempat||"",
+        tanggal:data.tanggal||"",
+        jk:data.jk||"",
+        status:data.status||"",
+        urutan:order,
+        createdAt
+      },{merge:true});
+    }
+  }catch(e){
+    console.warn("Inisialisasi urutan warga dilewati:",e);
+  }
+}
 function renderAll(){renderWarga();renderKas();stats()}
 
 function stats(){
@@ -222,6 +282,8 @@ $("wargaForm").onsubmit=async e=>{
   if(role!=="pengelola")return;
 
   const id=$("wId").value;
+  const oldWarga=id?warga.find(x=>x.id===id):null;
+  const now=Date.now();
   const full={
     nama:$("wNama").value.trim(),
     nik:$("wNik").value.trim(),
@@ -230,8 +292,20 @@ $("wargaForm").onsubmit=async e=>{
     tanggal:$("wTanggal").value,
     jk:$("wJk").value,
     status:$("wStatus").value,
-    updatedAt:Date.now()
+    urutan:Number(oldWarga?.urutan||0),
+    createdAt:Number(oldWarga?.createdAt||now),
+    updatedAt:now
   };
+
+  if(!id){
+    const maxOrder=warga.reduce((m,x)=>{
+      const n=Number(x.urutan);
+      return Number.isFinite(n)?Math.max(m,n):m;
+    },0);
+    full.urutan=maxOrder+1;
+  }else if(!full.urutan){
+    full.urutan=warga.length+1;
+  }
 
   if(!/^\d{16}$/.test(full.nik)||!/^\d{16}$/.test(full.kk)){
     alert("NIK dan No. KK harus 16 digit.");
@@ -245,7 +319,9 @@ $("wargaForm").onsubmit=async e=>{
     tempat:full.tempat,
     tanggal:full.tanggal,
     jk:full.jk,
-    status:full.status
+    status:full.status,
+    urutan:full.urutan,
+    createdAt:full.createdAt
   };
 
   try{
