@@ -655,3 +655,10 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
 @media(max-width:420px){
   .site-footer{margin-bottom:68px}
 }
+
+/* Membuat Saldo, Pemasukan, dan Pengeluaran tebal */
+#saldo,
+#masuk,
+#keluar {
+  font-weight: 800;
+}
