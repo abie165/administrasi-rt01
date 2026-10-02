@@ -221,7 +221,26 @@ function renderWarga(){
 }
 function renderKas(){
   kas.sort((a,b)=>(b.tanggal||"").localeCompare(a.tanggal||""));
-  $("kasBody").innerHTML=kas.length?kas.map(x=>`
+
+  // Isi pilihan tahun dari transaksi yang tersedia, tanpa mengubah data Firebase.
+  const yearSelect=$("kasYear");
+  const selectedYear=yearSelect.value;
+  const years=[...new Set(kas.map(x=>(x.tanggal||"").slice(0,4)).filter(y=>/^\\d{4}$/.test(y)))].sort().reverse();
+  yearSelect.innerHTML='<option value="">Semua tahun</option>'+years.map(y=>`<option value="${y}">${y}</option>`).join("");
+  if(years.includes(selectedYear))yearSelect.value=selectedYear;
+
+  const q=$("kasSearch").value.trim().toLocaleLowerCase("id");
+  const year=yearSelect.value, month=$("kasMonth").value, jenis=$("kasJenis").value;
+  const rows=kas.filter(x=>{
+    const date=x.tanggal||"";
+    const haystack=`${x.keterangan||""} ${date} ${x.jenis||""}`.toLocaleLowerCase("id");
+    return (!q||haystack.includes(q))&&
+      (!year||date.slice(0,4)===year)&&
+      (!month||date.slice(5,7)===month)&&
+      (!jenis||x.jenis===jenis);
+  });
+
+  $("kasBody").innerHTML=rows.length?rows.map(x=>`
     <tr>
       <td>${fmt(x.tanggal)}</td>
       <td>${esc(x.keterangan||"")}</td>
@@ -232,12 +251,14 @@ function renderKas(){
         <button class="delete" onclick="hapusKas('${x.id}')">Hapus</button>
       </td>
     </tr>`).join(""):
-    `<tr><td colspan="5" class="empty">Belum ada transaksi.</td></tr>`;
+    `<tr><td colspan="5" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
   stats();
 }
 
 $("search").oninput=renderWarga;
 ["filterJK","filterStatus","filterUmur"].forEach(id=>$(id).onchange=renderWarga);
+$("kasSearch").oninput=renderKas;
+["kasYear","kasMonth","kasJenis"].forEach(id=>$(id).onchange=renderKas);
 
 $("manageBtn").onclick=()=>{
   if(role){
