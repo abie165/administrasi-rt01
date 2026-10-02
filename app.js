@@ -71,9 +71,15 @@ function setRole(r){
 function page(id){
   document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));
   $(id).classList.add("active");
-  document.querySelectorAll(".bottom-nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===id));
+
+  // Hanya untuk tampilan: warna halaman mengikuti page yang sedang dibuka.
+  document.body.dataset.page=id;
+
+  document.querySelectorAll(".bottom-nav button")
+    .forEach(x=>x.classList.toggle("active",x.dataset.page===id));
 }
 document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>page(b.dataset.page));
+page("dashboard");
 
 async function load(){
   if(!configured){warga=[];kas=[];renderAll();return}
