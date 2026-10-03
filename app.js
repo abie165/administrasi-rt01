@@ -218,6 +218,12 @@ function renderWarga(){
     </tr>`).join(""):
     `<tr><td colspan="9" class="empty">Belum ada data warga.</td></tr>`;
 }
+const monthNames={
+  "01":"Januari","02":"Februari","03":"Maret","04":"April",
+  "05":"Mei","06":"Juni","07":"Juli","08":"Agustus",
+  "09":"September","10":"Oktober","11":"November","12":"Desember"
+};
+
 function renderKas(){
   kas.sort((a,b)=>(b.tanggal||"").localeCompare(a.tanggal||""));
 
@@ -251,6 +257,27 @@ function renderKas(){
       </td>
     </tr>`).join(""):
     `<tr><td colspan="5" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
+
+  // Rekap mengikuti pilihan Tahun + Bulan. Filter pencarian dan jenis sengaja
+  // tidak memengaruhi rekap agar angka tetap menjadi ringkasan keuangan periode.
+  const recapRows=kas.filter(x=>{
+    const date=x.tanggal||"";
+    return (!year||date.slice(0,4)===year)&&(!month||date.slice(5,7)===month);
+  });
+  const recapMasuk=recapRows.filter(x=>x.jenis==="masuk").reduce((s,x)=>s+Number(x.nominal||0),0);
+  const recapKeluar=recapRows.filter(x=>x.jenis==="keluar").reduce((s,x)=>s+Number(x.nominal||0),0);
+  const recapSaldo=recapMasuk-recapKeluar;
+
+  let recapLabel="Semua transaksi";
+  if(month&&year)recapLabel=`${monthNames[month]} ${year}`;
+  else if(month)recapLabel=`${monthNames[month]} (semua tahun)`;
+  else if(year)recapLabel=`Semua bulan tahun ${year}`;
+
+  $("rekapLabel").textContent=recapLabel;
+  $("rekapMasuk").textContent=rupiah(recapMasuk);
+  $("rekapKeluar").textContent=rupiah(recapKeluar);
+  $("rekapSaldo").textContent=rupiah(recapSaldo);
+
   stats();
 }
 
