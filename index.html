@@ -62,6 +62,20 @@
   <select id="kasJenis"><option value="">Semua jenis</option><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select>
 </div>
 <div class="table-card kas-table-card"><div class="table-wrap kas-scroll"><table class="kas-table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Pemasukan</th><th>Pengeluaran</th><th class="admin-col">Aksi</th></tr></thead><tbody id="kasBody"></tbody></table></div></div>
+<div class="kas-recap-card">
+  <div class="kas-recap-head">
+    <div>
+      <h2>📊 Rekap Bulan Terpilih</h2>
+      <p id="rekapLabel">Pilih bulan untuk melihat rekap</p>
+    </div>
+    <span class="recap-badge">Ringkasan</span>
+  </div>
+  <div class="kas-recap-list">
+    <div><span>Pemasukan</span><b id="rekapMasuk">Rp0</b></div>
+    <div><span>Pengeluaran</span><b id="rekapKeluar">Rp0</b></div>
+    <div><span>Saldo periode</span><b id="rekapSaldo">Rp0</b></div>
+  </div>
+</div>
 </section>
 <section id="statistik" class="page page-statistik"><div class="page-title"><div><span class="eyebrow">ANALISIS</span><h1>📈 Statistik Warga</h1></div></div><div class="stats"><article><span>👥 Total warga</span><strong id="sTotal">0</strong></article><article><span>🏠 Kepala keluarga</span><strong id="sKK">0</strong></article><article><span>👲 Laki-laki</span><strong id="sL">0</strong></article><article><span>🧕 Perempuan</span><strong id="sP">0</strong></article></div><div class="card"><h2>🎭 Kelompok umur</h2><div id="sAge" class="age-grid"></div></div></section>
 </main>
