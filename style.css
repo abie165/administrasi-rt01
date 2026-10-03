@@ -375,82 +375,59 @@ tbody tr:hover{background:var(--page-soft)}
   white-space:nowrap;
 }
 
-/* ---------- REKAP BULANAN KAS ---------- */
+/* ---------- REKAP BULANAN KAS - RINGKAS ---------- */
 .kas-recap-card{
-  margin-top:12px;
-  padding:18px;
-  background:linear-gradient(135deg,#fff,#faf7ff);
-  border:1px solid rgba(124,58,237,.14);
+  margin-top:10px;
+  padding:14px 18px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(223,232,230,.9);
   border-radius:17px;
-  box-shadow:var(--shadow);
+  box-shadow:var(--shadow-soft);
 }
 
-.kas-recap-head{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-}
-
-.kas-recap-head h2{
+.kas-recap-card h2{
   margin:0;
-  font-size:19px;
+  font-size:18px;
+  line-height:1.25;
   letter-spacing:-.02em;
 }
 
-.kas-recap-head p{
-  margin:3px 0 0;
+.kas-recap-card > p{
+  margin:2px 0 5px;
   color:var(--muted);
-  font-size:13px;
-}
-
-.recap-badge{
-  flex:0 0 auto;
-  padding:6px 9px;
-  border-radius:20px;
-  background:#f1eafe;
-  color:#6d28d9;
-  font-size:11px;
-  font-weight:800;
+  font-size:12px;
+  line-height:1.25;
 }
 
 .kas-recap-list{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:10px;
-  margin-top:14px;
+  display:block;
+  margin:0;
 }
 
 .kas-recap-list > div{
-  padding:12px 13px;
-  border:1px solid rgba(223,232,230,.85);
-  border-radius:13px;
-  background:rgba(255,255,255,.82);
-}
-
-.kas-recap-list span{
-  display:block;
-  color:var(--muted);
-  font-size:12px;
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  padding:1px 0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:var(--text);
+  font-size:14px;
+  line-height:1.35;
 }
 
 .kas-recap-list b{
-  display:block;
-  margin-top:3px;
-  font-size:17px;
-}
-
-@media(max-width:760px){
-  .kas-recap-list{grid-template-columns:1fr 1fr}
-  .kas-recap-list > div:last-child{grid-column:1/-1}
+  display:inline;
+  margin:0;
+  font-size:14px;
+  font-weight:800;
 }
 
 @media(max-width:420px){
   .card-head > #saldo{font-size:17px}
-  .kas-recap-card{padding:15px}
-  .kas-recap-head h2{font-size:17px}
-  .kas-recap-list{grid-template-columns:1fr}
-  .kas-recap-list > div:last-child{grid-column:auto}
+  .kas-recap-card{padding:13px 15px}
+  .kas-recap-card h2{font-size:17px}
 }
 
 /* ---------- BOTTOM NAV ---------- */
