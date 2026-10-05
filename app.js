@@ -245,18 +245,21 @@ function renderKas(){
       (!jenis||x.jenis===jenis);
   });
 
+  $("kasCount").textContent=rows.length;
+  $("kasTotalCount").textContent=kas.length;
+  $("kasCountLine").textContent=rows.length;
+  $("kasFilterSummary").textContent=(q||year||month||jenis)?"Sesuai filter":"Semua data";
   $("kasBody").innerHTML=rows.length?rows.map(x=>`
     <tr>
       <td>${fmt(x.tanggal)}</td>
       <td>${esc(x.keterangan||"")}</td>
-      <td>${x.jenis==="masuk"?`<span class="kas-income">${rupiah(x.nominal)}</span>`:"-"}</td>
-      <td>${x.jenis==="keluar"?`<span class="kas-expense">${rupiah(x.nominal)}</span>`:"-"}</td>
+      <td class="kas-nominal ${x.jenis==="masuk"?"kas-income":"kas-expense"}">${x.jenis==="masuk"?"+":"−"} ${rupiah(x.nominal)}</td>
       <td class="admin-col" style="display:${role?"table-cell":"none"}">
         <button class="edit" onclick="editKas('${x.id}')">Edit</button>
         <button class="delete" onclick="hapusKas('${x.id}')">Hapus</button>
       </td>
     </tr>`).join(""):
-    `<tr><td colspan="5" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
+    `<tr><td colspan="4" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
 
   // Rekap mengikuti pilihan Tahun + Bulan. Filter pencarian dan jenis sengaja
   // tidak memengaruhi rekap agar angka tetap menjadi ringkasan keuangan periode.
