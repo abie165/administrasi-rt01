@@ -693,6 +693,14 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
   }
 }
 
+/* Warna angka kas sesuai jenis transaksi. Hanya angka yang diwarnai. */
+.kas-income{
+  color:#198754;
+}
+.kas-expense{
+  color:#dc3545;
+}
+
 /* ---------- FILTER TRANSAKSI KAS ---------- */
 .kas-filters{
   margin:0 0 12px;
