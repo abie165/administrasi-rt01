@@ -727,3 +727,111 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
 @media(max-width:420px){
   .site-footer{margin-bottom:68px}
 }
+
+
+/* ---------- RIWAYAT KAS: tata letak mengikuti referensi gambar 1 ---------- */
+.page-kas .kas-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:18px;
+  margin:4px 0 8px;
+}
+.page-kas .kas-heading-title{flex:0 0 auto;min-width:230px}
+.page-kas .kas-heading-title h1{
+  margin:0;
+  font-size:25px;
+  line-height:1.35;
+  letter-spacing:-.025em;
+  color:#172f2d;
+}
+.page-kas .kas-subtitle{
+  margin:2px 0 0;
+  color:#71817e;
+  font-size:13px;
+}
+.page-kas .kas-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  flex:1;
+  min-width:0;
+}
+.page-kas .kas-filters{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(125px,1fr)) minmax(190px,1.25fr);
+  gap:8px;
+  margin:0;
+  flex:1;
+}
+.page-kas .kas-filters #kasSearch{grid-column:4;grid-row:1}
+.page-kas .kas-filters #kasYear{grid-column:1;grid-row:1}
+.page-kas .kas-filters #kasMonth{grid-column:2;grid-row:1}
+.page-kas .kas-filters #kasJenis{grid-column:3;grid-row:1}
+.page-kas .kas-filters input,
+.page-kas .kas-filters select{
+  min-width:0;
+  min-height:44px;
+  border:2px solid #e0e9e6;
+  border-radius:14px;
+  padding:10px 12px;
+  background:#fff;
+  font-size:14px;
+}
+.page-kas .kas-count-line{
+  margin:7px 0 22px;
+  color:#243a38;
+  font-size:15px;
+}
+.page-kas .kas-table-card{
+  border-radius:0;
+  border:0;
+  box-shadow:none;
+  background:transparent;
+  overflow:visible;
+}
+.page-kas .kas-scroll{overflow-x:auto}
+.page-kas .kas-table{width:100%;min-width:650px;border-collapse:collapse}
+.page-kas .kas-table th{
+  padding:13px 16px;
+  text-transform:uppercase;
+  font-size:12px;
+  font-weight:800;
+  color:#71817e;
+  background:transparent;
+  border-bottom:2px solid #e3ebe8;
+}
+.page-kas .kas-table td{
+  padding:17px 16px;
+  font-size:15px;
+  color:#203633;
+  border-bottom:1px solid #e3ebe8;
+  white-space:normal;
+}
+.page-kas .kas-table th:first-child,
+.page-kas .kas-table td:first-child{width:22%;white-space:nowrap}
+.page-kas .kas-table th:nth-child(2),
+.page-kas .kas-table td:nth-child(2){width:52%}
+.page-kas .kas-table th:nth-child(3),
+.page-kas .kas-table td:nth-child(3){width:20%;white-space:nowrap}
+.page-kas .kas-table .kas-nominal{font-weight:900;font-size:16px;text-align:left}
+.page-kas .kas-table .kas-income{color:#087443}
+.page-kas .kas-table .kas-expense{color:#b83226}
+.page-kas .kas-table tbody tr:hover{background:#f8fbfa}
+.page-kas .kas-hidden-summary{display:none!important}
+@media(max-width:1050px){
+  .page-kas .kas-heading{display:block}
+  .page-kas .kas-toolbar{margin-top:14px}
+}
+@media(max-width:650px){
+  .page-kas .kas-toolbar{display:block}
+  .page-kas .kas-filters{grid-template-columns:1fr 1fr;gap:8px}
+  .page-kas .kas-filters #kasSearch{grid-column:1 / -1;grid-row:1}
+  .page-kas .kas-filters #kasYear{grid-column:1;grid-row:2}
+  .page-kas .kas-filters #kasMonth{grid-column:2;grid-row:2}
+  .page-kas .kas-filters #kasJenis{grid-column:1 / -1;grid-row:3}
+  .page-kas #addKas{margin-top:9px}
+  .page-kas .kas-count-line{margin-bottom:14px}
+  .page-kas .kas-table td{padding:13px 10px}
+}
