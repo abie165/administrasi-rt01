@@ -45,10 +45,9 @@
 </div>
 </section>
 <section id="kas" class="page page-kas">
-<div class="kas-heading">
-  <div class="kas-heading-title"><h1>📋 Riwayat Kas</h1><p class="kas-subtitle">Menampilkan <b id="kasCount">0</b> dari <b id="kasTotalCount">0</b> transaksi</p></div>
-  <div class="kas-toolbar">
-    <div class="filters kas-filters">
+<div class="page-title"><div><span class="eyebrow">KEUANGAN</span><h1>💰 Kas RT</h1></div><button id="addKas" class="admin-only hidden">＋ Transaksi</button></div>
+<div class="money-cards"><article><span>📥 Pemasukan</span><b id="kasMasuk">Rp0</b></article><article><span>📤 Pengeluaran</span><b id="kasKeluar">Rp0</b></article><article><span><b>💸 Saldo</b></span><b id="kasSaldo">Rp0</b></article></div>
+<div class="filters kas-filters">
   <input id="kasSearch" type="search" placeholder="🔎 Cari transaksi…" autocomplete="off">
   <select id="kasYear"><option value="">Semua tahun</option></select>
   <select id="kasMonth">
@@ -61,13 +60,8 @@
     <option value="11">November</option><option value="12">Desember</option>
   </select>
   <select id="kasJenis"><option value="">Semua jenis</option><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select>
-    </div>
-    <button id="addKas" class="admin-only hidden">＋ Transaksi</button>
-  </div>
 </div>
-<div class="kas-hidden-summary" aria-hidden="true"><span id="kasMasuk">Rp0</span><span id="kasKeluar">Rp0</span><span id="kasSaldo">Rp0</span></div>
-<p class="kas-count-line">Menampilkan <b id="kasCountLine">0</b> transaksi <span id="kasFilterSummary">Semua data</span></p>
-<div class="table-card kas-table-card"><div class="table-wrap kas-scroll"><table class="kas-table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th>Nominal</th><th class="admin-col">Aksi</th></tr></thead><tbody id="kasBody"></tbody></table></div></div>
+<div class="table-card kas-table-card"><div class="table-wrap kas-scroll"><table class="kas-table"><thead><tr><th>Tanggal</th><th>Keterangan</th><th class="nominal-heading">Nominal</th></tr></thead><tbody id="kasBody"></tbody></table></div></div>
 <div class="kas-recap-card">
   <h2>💹 Rekap Bulan Terpilih</h2>
   <p id="rekapLabel">Pilih bulan untuk melihat rekap</p>
