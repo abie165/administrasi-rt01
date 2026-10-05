@@ -249,8 +249,8 @@ function renderKas(){
     <tr>
       <td>${fmt(x.tanggal)}</td>
       <td>${esc(x.keterangan||"")}</td>
-      <td>${x.jenis==="masuk"?rupiah(x.nominal):"-"}</td>
-      <td>${x.jenis==="keluar"?rupiah(x.nominal):"-"}</td>
+      <td>${x.jenis==="masuk"?`<span class="kas-income">${rupiah(x.nominal)}</span>`:"-"}</td>
+      <td>${x.jenis==="keluar"?`<span class="kas-expense">${rupiah(x.nominal)}</span>`:"-"}</td>
       <td class="admin-col" style="display:${role?"table-cell":"none"}">
         <button class="edit" onclick="editKas('${x.id}')">Edit</button>
         <button class="delete" onclick="hapusKas('${x.id}')">Hapus</button>
@@ -274,8 +274,8 @@ function renderKas(){
   else if(year)recapLabel=`Semua bulan tahun ${year}`;
 
   $("rekapLabel").textContent=recapLabel;
-  $("rekapMasuk").textContent=rupiah(recapMasuk);
-  $("rekapKeluar").textContent=rupiah(recapKeluar);
+  $("rekapMasuk").innerHTML=`<span class="kas-income">${rupiah(recapMasuk)}</span>`;
+  $("rekapKeluar").innerHTML=`<span class="kas-expense">${rupiah(recapKeluar)}</span>`;
   $("rekapSaldo").textContent=rupiah(recapSaldo);
 
   stats();
