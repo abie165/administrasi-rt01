@@ -60,6 +60,7 @@ const group=a=>a==null?"-":a<=5?"0-5":a<=12?"6-12":a<=17?"13-17":a<=59?"18-59":"
 const mask=v=>v&&v.length>=8?v.slice(0,4)+"********"+v.slice(-4):"********";
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const fmt=d=>d?new Date(d+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"2-digit",year:"numeric"}):"-";
+const fmtKas=d=>d?new Date(d+"T00:00:00").toLocaleDateString("id-ID",{day:"2-digit",month:"short",year:"numeric"}):"-";
 
 function setRole(r){
   role=r;
@@ -245,21 +246,13 @@ function renderKas(){
       (!jenis||x.jenis===jenis);
   });
 
-  $("kasCount").textContent=rows.length;
-  $("kasTotalCount").textContent=kas.length;
-  $("kasCountLine").textContent=rows.length;
-  $("kasFilterSummary").textContent=(q||year||month||jenis)?"Sesuai filter":"Semua data";
   $("kasBody").innerHTML=rows.length?rows.map(x=>`
     <tr>
-      <td>${fmt(x.tanggal)}</td>
-      <td>${esc(x.keterangan||"")}</td>
-      <td class="kas-nominal ${x.jenis==="masuk"?"kas-income":"kas-expense"}">${x.jenis==="masuk"?"+":"−"} ${rupiah(x.nominal)}</td>
-      <td class="admin-col" style="display:${role?"table-cell":"none"}">
-        <button class="edit" onclick="editKas('${x.id}')">Edit</button>
-        <button class="delete" onclick="hapusKas('${x.id}')">Hapus</button>
-      </td>
+      <td class="kas-date">${fmtKas(x.tanggal)}</td>
+      <td class="kas-description">${esc(x.keterangan||"")}${role?`<span class="kas-row-actions"><button class="edit" onclick="editKas('${x.id}')">Edit</button><button class="delete" onclick="hapusKas('${x.id}')">Hapus</button></span>`:""}</td>
+      <td class="kas-nominal">${x.jenis==="masuk"?`<span class="kas-income">+ ${rupiah(x.nominal)}</span>`:`<span class="kas-expense">- ${rupiah(x.nominal)}</span>`}</td>
     </tr>`).join(""):
-    `<tr><td colspan="4" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
+    `<tr><td colspan="3" class="empty">${kas.length?"Tidak ada transaksi yang sesuai dengan filter.":"Belum ada transaksi."}</td></tr>`;
 
   // Rekap mengikuti pilihan Tahun + Bulan. Filter pencarian dan jenis sengaja
   // tidak memengaruhi rekap agar angka tetap menjadi ringkasan keuangan periode.
