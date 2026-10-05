@@ -727,3 +727,23 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
 @media(max-width:420px){
   .site-footer{margin-bottom:68px}
 }
+
+/* WARNA NOMINAL KAS */
+.kas-table tbody td:nth-child(3) {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.kas-table tbody td:nth-child(4) {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+/* WARNA NOMINAL REKAP */
+#rekapMasuk {
+  color: #16a34a;
+}
+
+#rekapKeluar {
+  color: #dc2626;
+}
