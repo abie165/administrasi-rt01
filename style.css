@@ -366,6 +366,16 @@ tbody tr:hover{background:var(--page-soft)}
   z-index:1;
 }
 
+/* ---------- WARNA NILAI KEUANGAN ---------- */
+/* Pemasukan = hijau, Pengeluaran = merah. Data dan logika transaksi tidak diubah. */
+#masuk, #kasMasuk, #rekapMasuk{
+  color:#15803d;
+}
+
+#keluar, #kasKeluar, #rekapKeluar{
+  color:#dc2626;
+}
+
 
 /* ---------- SALDO DASHBOARD ---------- */
 .card-head > #saldo{
