@@ -42,6 +42,9 @@ if(configured){
       // Data lama yang belum memiliki urutan diinisialisasi sekali oleh pengelola.
       await migrateWargaOrder();
       setRole("pengelola");
+      // Setelah sinkronisasi data warga lama selesai, muat ulang data dari Firebase
+      // agar data langsung muncul tanpa perlu refresh halaman manual.
+      await load();
     }catch(e){
       console.error(e);
       setRole(null);
