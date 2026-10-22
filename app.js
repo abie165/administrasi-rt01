@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
-import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
+import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 
 /*
  * LOGIN SEDERHANA:
@@ -116,7 +116,6 @@ async function load(){
 }
 
 async function migrateWargaOrder(){
-  if(role==="pengelola")return;
   try{
     const snap=await getDocs(collection(db,"warga_private"));
     const docs=snap.docs.slice().sort((a,b)=>{
@@ -308,35 +307,103 @@ $("addDokumen").onclick=()=>{
 
 $("dokumenForm").onsubmit=async e=>{
   e.preventDefault();
-  if(role!=="pengelola")return;
-  const file=$("dFile").files[0];
-  if(!file)return;
-  if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf")){
-    $("dokumenError").textContent="File harus berformat PDF.";return;
+  if(role!=="pengelola"){
+    $("dokumenError").textContent="Silakan masuk sebagai Pengelola terlebih dahulu.";
+    return;
   }
-  if(file.size>20*1024*1024){$("dokumenError").textContent="Ukuran file maksimal 20 MB.";return;}
-  if(!configured||!storage){$("dokumenError").textContent="Firebase belum siap. Periksa konfigurasi Firebase.";return;}
+  const file=$("dFile").files[0];
+  if(!file){
+    $("dokumenError").textContent="Silakan pilih file PDF terlebih dahulu.";
+    return;
+  }
+  if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf")){
+    $("dokumenError").textContent="File harus berformat PDF.";
+    return;
+  }
+  if(file.size>20*1024*1024){
+    $("dokumenError").textContent="Ukuran file maksimal 20 MB.";
+    return;
+  }
+  if(!configured||!storage||!db){
+    $("dokumenError").textContent="Firebase belum siap. Muat ulang halaman, lalu coba lagi.";
+    return;
+  }
+  if(!auth?.currentUser){
+    $("dokumenError").textContent="Sesi Pengelola tidak aktif. Keluar lalu masuk kembali.";
+    return;
+  }
+
   const button=$("saveDokumen");
-  button.disabled=true;button.textContent="Mengunggah…";$("dokumenError").textContent="";
+  const originalLabel="Unggah";
+  button.disabled=true;
+  button.textContent="Menyiapkan unggahan…";
+  $("dokumenError").textContent="";
+  let fileRef=null;
+  let uploadTask=null;
+  let uploaded=false;
   const safeName=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-120);
   const path=`dokumen_rt/${Date.now()}_${safeName}`;
-  const fileRef=storageRef(storage,path);
   try{
-    await uploadBytes(fileRef,file,{contentType:"application/pdf"});
+    fileRef=storageRef(storage,path);
+    uploadTask=uploadBytesResumable(fileRef,file,{contentType:"application/pdf"});
+    button.textContent="Mengunggah 0%…";
+
+    // Upload resumable agar progres terlihat dan kesalahan jaringan dapat ditangani.
+    await new Promise((resolve,reject)=>{
+      let settled=false;
+      const finish=(fn,value)=>{
+        if(settled)return;
+        settled=true;
+        clearTimeout(timeoutId);
+        fn(value);
+      };
+      const timeoutId=setTimeout(()=>{
+        try{uploadTask.cancel()}catch(_){}
+        finish(reject,new Error("Waktu unggah habis. Periksa koneksi internet dan coba lagi."));
+      },120000);
+
+      uploadTask.on("state_changed",snapshot=>{
+        const percent=snapshot.totalBytes
+          ? Math.round(snapshot.bytesTransferred/snapshot.totalBytes*100) : 0;
+        button.textContent=`Mengunggah ${percent}%…`;
+      },error=>finish(reject,error),()=>finish(resolve,uploadTask.snapshot));
+    });
+    uploaded=true;
     const url=await getDownloadURL(fileRef);
-    try{
-      await addDoc(collection(db,"dokumen_rt"),{
-        judul:$("dJudul").value.trim(),kategori:$("dKategori").value,
-        keterangan:$("dKeterangan").value.trim(),namaFile:file.name,
-        storagePath:path,url,createdAt:Date.now(),uploadedBy:auth.currentUser?.uid||""
-      });
-    }catch(err){await deleteObject(fileRef).catch(()=>{});throw err;}
+    await addDoc(collection(db,"dokumen_rt"),{
+      judul:$("dJudul").value.trim(),
+      kategori:$("dKategori").value,
+      keterangan:$("dKeterangan").value.trim(),
+      namaFile:file.name,
+      storagePath:path,
+      url,
+      createdAt:Date.now(),
+      uploadedBy:auth.currentUser.uid
+    });
     $("dokumenDialog").close();
     await load();
   }catch(err){
-    console.error(err);
-    $("dokumenError").textContent="Gagal mengunggah dokumen. Periksa koneksi, aturan Firebase Storage, dan izin akses. "+(err.code||err.message||"");
-  }finally{button.disabled=false;button.textContent="Unggah";}
+    console.error("Unggah dokumen gagal:",err);
+    // Jika file berhasil tersimpan tetapi metadata gagal, jangan hapus file otomatis.
+    // Ini mencegah file yang sudah terunggah hilang akibat masalah Firestore.
+    const code=err?.code||"";
+    let message="Unggah gagal. ";
+    if(code.includes("storage/unauthorized")||code.includes("permission-denied")){
+      message="Izin Firebase ditolak. Pastikan Anda masuk sebagai Pengelola dan aturan Firebase Storage serta Firestore sudah diterapkan.";
+    }else if(code.includes("storage/")||code.includes("unavailable")||code.includes("network")){
+      message="Koneksi atau Firebase Storage bermasalah. Pastikan Storage sudah diaktifkan di proyek Firebase, lalu coba lagi.";
+    }else if(err?.message?.includes("Waktu unggah habis")){
+      message=err.message+" Jika berulang, coba file yang lebih kecil.";
+    }else if(uploaded){
+      message="File kemungkinan sudah tersimpan, tetapi catatan dokumennya belum berhasil disimpan. Jangan unggah berulang kali dulu; periksa koneksi/izin Firestore.";
+    }else{
+      message+="Periksa koneksi internet dan pengaturan Firebase. ";
+    }
+    $("dokumenError").textContent=message+(code?` (Kode: ${code})`:"");
+  }finally{
+    button.disabled=false;
+    button.textContent=originalLabel;
+  }
 };
 
 window.hapusDokumen=async id=>{
