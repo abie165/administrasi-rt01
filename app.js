@@ -301,7 +301,7 @@ $("addDokumen").onclick=()=>{
   $("dokumenForm").reset();
   $("dokumenError").textContent="";
   $("saveDokumen").disabled=false;
-  $("saveDokumen").textContent="Unggah";
+  $("saveDokumen").textContent="Simpan tautan PDF";
   $("dokumenDialog").showModal();
 };
 
@@ -311,20 +311,21 @@ $("dokumenForm").onsubmit=async e=>{
     $("dokumenError").textContent="Silakan masuk sebagai Pengelola terlebih dahulu.";
     return;
   }
-  const file=$("dFile").files[0];
-  if(!file){
-    $("dokumenError").textContent="Silakan pilih file PDF terlebih dahulu.";
+  const driveUrl=$("dDriveUrl").value.trim();
+  if(!driveUrl){
+    $("dokumenError").textContent="Tempel tautan PDF Google Drive terlebih dahulu.";
     return;
   }
-  if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf")){
-    $("dokumenError").textContent="File harus berformat PDF.";
+  let parsed;
+  try{parsed=new URL(driveUrl)}catch(_){
+    $("dokumenError").textContent="Tautan tidak valid. Salin tautan berbagi dari Google Drive.";
     return;
   }
-  if(file.size>20*1024*1024){
-    $("dokumenError").textContent="Ukuran file maksimal 20 MB.";
+  if(parsed.hostname!="drive.google.com" || !parsed.pathname.includes("/file/d/")){
+    $("dokumenError").textContent="Gunakan tautan berbagi Google Drive dengan format drive.google.com/file/d/...";
     return;
   }
-  if(!configured||!storage||!db){
+  if(!configured||!db){
     $("dokumenError").textContent="Firebase belum siap. Muat ulang halaman, lalu coba lagi.";
     return;
   }
@@ -334,76 +335,37 @@ $("dokumenForm").onsubmit=async e=>{
   }
 
   const button=$("saveDokumen");
-  const originalLabel="Unggah";
   button.disabled=true;
-  button.textContent="Menyiapkan unggahan…";
+  button.textContent="Menyimpan…";
   $("dokumenError").textContent="";
-  let fileRef=null;
-  let uploadTask=null;
-  let uploaded=false;
-  const safeName=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-120);
-  const path=`dokumen_rt/${Date.now()}_${safeName}`;
   try{
-    fileRef=storageRef(storage,path);
-    uploadTask=uploadBytesResumable(fileRef,file,{contentType:"application/pdf"});
-    button.textContent="Mengunggah 0%…";
-
-    // Upload resumable agar progres terlihat dan kesalahan jaringan dapat ditangani.
-    await new Promise((resolve,reject)=>{
-      let settled=false;
-      const finish=(fn,value)=>{
-        if(settled)return;
-        settled=true;
-        clearTimeout(timeoutId);
-        fn(value);
-      };
-      const timeoutId=setTimeout(()=>{
-        try{uploadTask.cancel()}catch(_){}
-        finish(reject,new Error("Waktu unggah habis. Periksa koneksi internet dan coba lagi."));
-      },120000);
-
-      uploadTask.on("state_changed",snapshot=>{
-        const percent=snapshot.totalBytes
-          ? Math.round(snapshot.bytesTransferred/snapshot.totalBytes*100) : 0;
-        button.textContent=`Mengunggah ${percent}%…`;
-      },error=>finish(reject,error),()=>finish(resolve,uploadTask.snapshot));
-    });
-    uploaded=true;
-    const url=await getDownloadURL(fileRef);
+    const idMatch=parsed.pathname.match(/\/file\/d\/([^/]+)/);
+    const driveId=idMatch?.[1];
+    if(!driveId)throw new Error("ID file Google Drive tidak ditemukan.");
+    const title=$("dJudul").value.trim();
     await addDoc(collection(db,"dokumen_rt"),{
-      judul:$("dJudul").value.trim(),
+      judul:title,
       kategori:$("dKategori").value,
       keterangan:$("dKeterangan").value.trim(),
-      namaFile:file.name,
-      storagePath:path,
-      url,
+      namaFile:title.endsWith(".pdf")?title:title+".pdf",
+      url:driveUrl,
+      sumber:"google_drive",
       createdAt:Date.now(),
       uploadedBy:auth.currentUser.uid
     });
     $("dokumenDialog").close();
     await load();
   }catch(err){
-    console.error("Unggah dokumen gagal:",err);
-    // Jika file berhasil tersimpan tetapi metadata gagal, jangan hapus file otomatis.
-    // Ini mencegah file yang sudah terunggah hilang akibat masalah Firestore.
+    console.error("Penyimpanan metadata dokumen gagal:",err);
     const code=err?.code||"";
-    let message="Unggah gagal. ";
-    if(code.includes("storage/unauthorized")||code.includes("permission-denied")){
-      message="Izin Firebase ditolak. Pastikan Anda masuk sebagai Pengelola dan aturan Firebase Storage serta Firestore sudah diterapkan.";
-    }else if(code.includes("storage/")||code.includes("unavailable")||code.includes("network")){
-      message="Koneksi atau Firebase Storage bermasalah. Pastikan Storage sudah diaktifkan di proyek Firebase, lalu coba lagi.";
-    }else if(err?.message?.includes("Waktu unggah habis")){
-      message=err.message+" Jika berulang, coba file yang lebih kecil.";
-    }else if(uploaded){
-      message="File kemungkinan sudah tersimpan, tetapi catatan dokumennya belum berhasil disimpan. Jangan unggah berulang kali dulu; periksa koneksi/izin Firestore.";
-    }else{
-      message+="Periksa koneksi internet dan pengaturan Firebase. ";
-    }
-    $("dokumenError").textContent=message+(code?` (Kode: ${code})`:"");
+    $("dokumenError").textContent=code.includes("permission-denied")
+      ?"Izin Firestore ditolak. Pastikan akun Anda memiliki peran Pengelola."
+      :"Tautan belum tersimpan. Periksa koneksi internet dan coba lagi."+(code?` (Kode: ${code})`:"");
   }finally{
     button.disabled=false;
-    button.textContent=originalLabel;
+    button.textContent="Simpan tautan PDF";
   }
+
 };
 
 window.hapusDokumen=async id=>{
