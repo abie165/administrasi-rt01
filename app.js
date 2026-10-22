@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-storage.js";
 
 /*
  * LOGIN SEDERHANA:
@@ -21,12 +22,13 @@ const firebaseConfig={
 };
 
 const configured=!firebaseConfig.apiKey.startsWith("GANTI_");
-let db=null,auth=null,role=null,warga=[],kas=[];
+let db=null,auth=null,storage=null,role=null,warga=[],kas=[],dokumen=[];
 
 if(configured){
   const app=initializeApp(firebaseConfig);
   auth=getAuth(app);
   db=getFirestore(app);
+  storage=getStorage(app);
   onAuthStateChanged(auth,async user=>{
     if(!user){setRole(null);return}
     try{
@@ -69,6 +71,7 @@ function setRole(r){
   document.querySelectorAll(".admin-col").forEach(x=>x.style.display=r?"table-cell":"none");
   renderWarga();
   renderKas();
+  renderDokumen();
 }
 
 function page(id){
@@ -85,25 +88,28 @@ document.querySelectorAll(".bottom-nav button").forEach(b=>b.onclick=()=>page(b.
 page("dashboard");
 
 async function load(){
-  if(!configured){warga=[];kas=[];renderAll();return}
-  try{
-    const [w,k]=await Promise.all([
-      getDocs(collection(db,"warga_public")),
-      getDocs(collection(db,"kas"))
-    ]);
-    warga=w.docs.map(d=>({id:d.id,...d.data()}))
+  if(!configured){warga=[];kas=[];dokumen=[];renderAll();return}
+  // Ambil tiap koleksi secara terpisah agar aturan/masalah koleksi dokumen
+  // tidak membuat data warga dan kas yang sudah ada ikut gagal ditampilkan.
+  const [wResult,kResult,dResult]=await Promise.allSettled([
+    getDocs(collection(db,"warga_public")),
+    getDocs(collection(db,"kas")),
+    getDocs(collection(db,"dokumen_rt"))
+  ]);
+  if(wResult.status==="fulfilled"){
+    warga=wResult.value.docs.map(d=>({id:d.id,...d.data()}))
       .sort((a,b)=>{
         const ao=Number.isFinite(Number(a.urutan))?Number(a.urutan):Number.MAX_SAFE_INTEGER;
         const bo=Number.isFinite(Number(b.urutan))?Number(b.urutan):Number.MAX_SAFE_INTEGER;
         if(ao!==bo)return ao-bo;
         return String(a.nama||"").localeCompare(String(b.nama||""),"id");
       });
-    kas=k.docs.map(d=>({id:d.id,...d.data()}));
-    renderAll();
-  }catch(e){
-    console.error(e);
-    warga=[];kas=[];renderAll();
-  }
+  }else console.error("Gagal memuat data warga:",wResult.reason);
+  if(kResult.status==="fulfilled")kas=kResult.value.docs.map(d=>({id:d.id,...d.data()}));
+  else console.error("Gagal memuat kas:",kResult.reason);
+  if(dResult.status==="fulfilled")dokumen=dResult.value.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>Number(b.createdAt||0)-Number(a.createdAt||0));
+  else {console.error("Gagal memuat dokumen RT. Pastikan Firestore Rules sudah diperbarui:",dResult.reason);dokumen=[];}
+  renderAll();
 }
 
 async function migrateWargaOrder(){
@@ -158,7 +164,7 @@ async function migrateWargaOrder(){
     console.warn("Inisialisasi urutan warga dilewati:",e);
   }
 }
-function renderAll(){renderWarga();renderKas();stats()}
+function renderAll(){renderWarga();renderKas();renderDokumen();stats()}
 
 function stats(){
   const total=warga.length;
@@ -276,6 +282,70 @@ function renderKas(){
 
   stats();
 }
+
+function renderDokumen(){
+  const host=$("dokumenList");
+  if(!host)return;
+  const q=($("dokumenSearch")?.value||"").trim().toLocaleLowerCase("id");
+  const kategori=$("dokumenKategori")?.value||"";
+  const rows=dokumen.filter(x=>(!kategori||x.kategori===kategori)&&(!q||`${x.judul||""} ${x.kategori||""} ${x.keterangan||""} ${x.namaFile||""}`.toLocaleLowerCase("id").includes(q)));
+  host.innerHTML=rows.length?rows.map(x=>`<article class="dokumen-card"><div class="dokumen-icon">📕</div><div class="dokumen-info"><span class="dokumen-tag">${esc(x.kategori||"Lainnya")}</span><h2>${esc(x.judul||x.namaFile||"Dokumen PDF")}</h2>${x.keterangan?`<p>${esc(x.keterangan)}</p>`:""}<small>PDF${x.createdAt?` · Diunggah ${new Date(Number(x.createdAt)).toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}`:""}</small><div class="dokumen-actions"><a class="doc-link" href="${esc(x.url||"#")}" target="_blank" rel="noopener noreferrer">👁️ Lihat PDF</a><a class="doc-link secondary-link" href="${esc(x.url||"#")}" download="${esc(x.namaFile||"dokumen.pdf")}" target="_blank" rel="noopener noreferrer">⬇️ Unduh</a>${role?`<button class="delete doc-delete" onclick="hapusDokumen('${x.id}')">Hapus</button>`:""}</div></div></article>`).join(""):`<div class="empty-documents">${dokumen.length?"Tidak ada dokumen yang sesuai dengan pencarian.":"Belum ada dokumen. Dokumen yang diunggah pengelola akan muncul di sini."}</div>`;
+}
+
+$("dokumenSearch").oninput=renderDokumen;
+$("dokumenKategori").onchange=renderDokumen;
+$("addDokumen").onclick=()=>{
+  if(role!=="pengelola")return;
+  $("dokumenForm").reset();
+  $("dokumenError").textContent="";
+  $("saveDokumen").disabled=false;
+  $("saveDokumen").textContent="Unggah";
+  $("dokumenDialog").showModal();
+};
+
+$("dokumenForm").onsubmit=async e=>{
+  e.preventDefault();
+  if(role!=="pengelola")return;
+  const file=$("dFile").files[0];
+  if(!file)return;
+  if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf")){
+    $("dokumenError").textContent="File harus berformat PDF.";return;
+  }
+  if(file.size>20*1024*1024){$("dokumenError").textContent="Ukuran file maksimal 20 MB.";return;}
+  if(!configured||!storage){$("dokumenError").textContent="Firebase belum siap. Periksa konfigurasi Firebase.";return;}
+  const button=$("saveDokumen");
+  button.disabled=true;button.textContent="Mengunggah…";$("dokumenError").textContent="";
+  const safeName=file.name.normalize("NFKD").replace(/[^a-zA-Z0-9._-]/g,"_").slice(-120);
+  const path=`dokumen_rt/${Date.now()}_${safeName}`;
+  const fileRef=storageRef(storage,path);
+  try{
+    await uploadBytes(fileRef,file,{contentType:"application/pdf"});
+    const url=await getDownloadURL(fileRef);
+    try{
+      await addDoc(collection(db,"dokumen_rt"),{
+        judul:$("dJudul").value.trim(),kategori:$("dKategori").value,
+        keterangan:$("dKeterangan").value.trim(),namaFile:file.name,
+        storagePath:path,url,createdAt:Date.now(),uploadedBy:auth.currentUser?.uid||""
+      });
+    }catch(err){await deleteObject(fileRef).catch(()=>{});throw err;}
+    $("dokumenDialog").close();
+    await load();
+  }catch(err){
+    console.error(err);
+    $("dokumenError").textContent="Gagal mengunggah dokumen. Periksa koneksi, aturan Firebase Storage, dan izin akses. "+(err.code||err.message||"");
+  }finally{button.disabled=false;button.textContent="Unggah";}
+};
+
+window.hapusDokumen=async id=>{
+  if(role!=="pengelola")return;
+  const item=dokumen.find(x=>x.id===id);
+  if(!item||!confirm(`Hapus dokumen "${item.judul||item.namaFile}"? Tindakan ini tidak dapat dibatalkan.`))return;
+  try{
+    await deleteDoc(doc(db,"dokumen_rt",id));
+    if(item.storagePath&&storage)await deleteObject(storageRef(storage,item.storagePath)).catch(err=>console.warn("File Storage mungkin sudah tidak ada:",err));
+    await load();
+  }catch(err){console.error(err);alert("Gagal menghapus dokumen: "+(err.message||err));}
+};
 
 $("search").oninput=renderWarga;
 ["filterJK","filterStatus","filterUmur"].forEach(id=>$(id).onchange=renderWarga);
