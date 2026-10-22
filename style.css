@@ -753,3 +753,27 @@ label{display:block;font-weight:700;font-size:13px;margin:10px 0}
   .kas-table th:nth-child(3),.kas-table td:nth-child(3){width:auto;}
   .kas-table .kas-row-actions{display:flex;margin:5px 0 0;}
 }
+
+/* ---------- DOKUMEN RT ---------- */
+.page-dokumen{--page-a:#b45309;--page-b:#f59e0b;--page-soft:#fff7e8}
+.dokumen-intro{margin-bottom:16px}
+.dokumen-filters{grid-template-columns:minmax(0,2fr) minmax(170px,1fr)}
+.dokumen-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:14px}
+.dokumen-card{display:flex;gap:14px;align-items:flex-start;padding:18px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow-soft);min-width:0}
+.dokumen-icon{display:grid;place-items:center;flex:0 0 48px;width:48px;height:56px;border-radius:13px;background:#fff0e7;font-size:27px}
+.dokumen-info{min-width:0;flex:1}
+.dokumen-tag{display:inline-block;padding:3px 9px;border-radius:99px;background:#fff3d9;color:#92400e;font-size:11px;font-weight:900}
+.dokumen-info h2{font-size:16px;line-height:1.35;margin:8px 0 5px;overflow-wrap:anywhere}
+.dokumen-info p{color:var(--muted);font-size:13px;margin:0 0 7px;overflow-wrap:anywhere;white-space:pre-wrap}
+.dokumen-info>small{font-size:11px}
+.dokumen-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px;align-items:center}
+.doc-link{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;background:var(--primary);color:#fff;font-weight:800;font-size:12px;padding:8px 11px;border-radius:10px}
+.doc-link:hover{filter:brightness(1.07)}
+.secondary-link{background:#eaf2f1;color:#25514d}
+.doc-delete{background:#fff0ef;color:#b42318;padding:8px 10px;font-size:12px}
+.empty-documents{grid-column:1/-1;padding:28px 18px;text-align:center;color:var(--muted);background:rgba(255,255,255,.75);border:1px dashed #cbd8d6;border-radius:16px}
+#dokumenForm textarea{display:block;width:100%;font:inherit;padding:11px 12px;border:1px solid #d8e2e0;border-radius:11px;resize:vertical;margin-top:5px}
+#dokumenForm input[type=file]{padding:9px;background:#f8fbfa}
+#saveDokumen:disabled{opacity:.65;cursor:wait}
+.bottom-nav button{min-width:0}
+@media(max-width:650px){.dokumen-list{grid-template-columns:1fr}.dokumen-card{padding:15px}.dokumen-filters{grid-template-columns:1fr}.bottom-nav button{font-size:16px;padding:8px 1px}.bottom-nav button span{font-size:10px}}
