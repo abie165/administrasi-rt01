@@ -23,6 +23,7 @@ const firebaseConfig={
 
 const configured=!firebaseConfig.apiKey.startsWith("GANTI_");
 let db=null,auth=null,storage=null,role=null,warga=[],kas=[],dokumen=[];
+let editingDokumenId=null;
 
 if(configured){
   const app=initializeApp(firebaseConfig);
@@ -291,17 +292,36 @@ function renderDokumen(){
   const q=($("dokumenSearch")?.value||"").trim().toLocaleLowerCase("id");
   const kategori=$("dokumenKategori")?.value||"";
   const rows=dokumen.filter(x=>(!kategori||x.kategori===kategori)&&(!q||`${x.judul||""} ${x.kategori||""} ${x.keterangan||""} ${x.namaFile||""}`.toLocaleLowerCase("id").includes(q)));
-  host.innerHTML=rows.length?rows.map(x=>`<article class="dokumen-card"><div class="dokumen-icon">📕</div><div class="dokumen-info"><span class="dokumen-tag">${esc(x.kategori||"Lainnya")}</span><h2>${esc(x.judul||x.namaFile||"Dokumen PDF")}</h2>${x.keterangan?`<p>${esc(x.keterangan)}</p>`:""}<small>PDF${x.createdAt?` · Diunggah ${new Date(Number(x.createdAt)).toLocaleDateString("id-ID",{day:"2-digit",month:"long",year:"numeric"})}`:""}</small><div class="dokumen-actions"><a class="doc-link" href="${esc(x.url||"#")}" target="_blank" rel="noopener noreferrer">👁️ Lihat PDF</a><a class="doc-link secondary-link" href="${esc(x.url||"#")}" download="${esc(x.namaFile||"dokumen.pdf")}" target="_blank" rel="noopener noreferrer">⬇️ Unduh</a>${role?`<button class="delete doc-delete" onclick="hapusDokumen('${x.id}')">Hapus</button>`:""}</div></div></article>`).join(""):`<div class="empty-documents">${dokumen.length?"Tidak ada dokumen yang sesuai dengan pencarian.":"Belum ada dokumen. Dokumen yang diunggah pengelola akan muncul di sini."}</div>`;
+  host.innerHTML=rows.length?rows.map(x=>`<article class="dokumen-card"><div class="dokumen-icon">📕</div><div class="dokumen-info"><span class="dokumen-tag">${esc(x.kategori||"Lainnya")}</span><h2>${esc(x.judul||x.namaFile||"Dokumen PDF")}</h2>${x.keterangan?`<p>${esc(x.keterangan)}</p>`:""}<div class="dokumen-actions"><a class="doc-link" href="${esc(x.url||"#")}" target="_blank" rel="noopener noreferrer">👁️ Lihat</a><a class="doc-link secondary-link" href="${esc(x.url||"#")}" download="${esc(x.namaFile||"dokumen.pdf")}" target="_blank" rel="noopener noreferrer">⬇️ Unduh</a>${role?`<button class="edit" onclick="editDokumen('${x.id}')">Edit</button><button class="delete doc-delete" onclick="hapusDokumen('${x.id}')">Hapus</button>`:""}</div></div></article>`).join(""):`<div class="empty-documents">${dokumen.length?"Tidak ada dokumen yang sesuai dengan pencarian.":"Belum ada dokumen. Dokumen yang diunggah pengelola akan muncul di sini."}</div>`;
 }
 
 $("dokumenSearch").oninput=renderDokumen;
 $("dokumenKategori").onchange=renderDokumen;
 $("addDokumen").onclick=()=>{
   if(role!=="pengelola")return;
+  editingDokumenId=null;
   $("dokumenForm").reset();
   $("dokumenError").textContent="";
+  $("dokumenDialog").querySelector("h2").textContent="Unggah Dokumen PDF";
   $("saveDokumen").disabled=false;
   $("saveDokumen").textContent="Simpan tautan PDF";
+  $("dokumenDialog").showModal();
+};
+
+window.editDokumen=id=>{
+  if(role!=="pengelola")return;
+  const item=dokumen.find(x=>x.id===id);
+  if(!item)return;
+  editingDokumenId=id;
+  $("dokumenForm").reset();
+  $("dokumenError").textContent="";
+  $("dJudul").value=item.judul||"";
+  $("dKategori").value=item.kategori||"Lainnya";
+  $("dKeterangan").value=item.keterangan||"";
+  $("dDriveUrl").value=item.url||"";
+  $("dokumenDialog").querySelector("h2").textContent="Edit Dokumen";
+  $("saveDokumen").disabled=false;
+  $("saveDokumen").textContent="Simpan Perubahan";
   $("dokumenDialog").showModal();
 };
 
@@ -321,7 +341,7 @@ $("dokumenForm").onsubmit=async e=>{
     $("dokumenError").textContent="Tautan tidak valid. Salin tautan berbagi dari Google Drive.";
     return;
   }
-  if(parsed.hostname!="drive.google.com" || !parsed.pathname.includes("/file/d/")){
+  if(parsed.hostname!=="drive.google.com" || !parsed.pathname.includes("/file/d/")){
     $("dokumenError").textContent="Gunakan tautan berbagi Google Drive dengan format drive.google.com/file/d/...";
     return;
   }
@@ -333,26 +353,31 @@ $("dokumenForm").onsubmit=async e=>{
     $("dokumenError").textContent="Sesi Pengelola tidak aktif. Keluar lalu masuk kembali.";
     return;
   }
-
   const button=$("saveDokumen");
+  const sedangEdit=Boolean(editingDokumenId);
   button.disabled=true;
   button.textContent="Menyimpan…";
   $("dokumenError").textContent="";
   try{
-    const idMatch=parsed.pathname.match(/\/file\/d\/([^/]+)/);
-    const driveId=idMatch?.[1];
-    if(!driveId)throw new Error("ID file Google Drive tidak ditemukan.");
     const title=$("dJudul").value.trim();
-    await addDoc(collection(db,"dokumen_rt"),{
+    const data={
       judul:title,
       kategori:$("dKategori").value,
       keterangan:$("dKeterangan").value.trim(),
-      namaFile:title.endsWith(".pdf")?title:title+".pdf",
+      namaFile:title.toLowerCase().endsWith(".pdf")?title:title+".pdf",
       url:driveUrl,
-      sumber:"google_drive",
-      createdAt:Date.now(),
-      uploadedBy:auth.currentUser.uid
-    });
+      sumber:"google_drive"
+    };
+    if(editingDokumenId){
+      await updateDoc(doc(db,"dokumen_rt",editingDokumenId),data);
+    }else{
+      await addDoc(collection(db,"dokumen_rt"),{
+        ...data,
+        createdAt:Date.now(),
+        uploadedBy:auth.currentUser.uid
+      });
+    }
+    editingDokumenId=null;
     $("dokumenDialog").close();
     await load();
   }catch(err){
@@ -363,9 +388,8 @@ $("dokumenForm").onsubmit=async e=>{
       :"Tautan belum tersimpan. Periksa koneksi internet dan coba lagi."+(code?` (Kode: ${code})`:"");
   }finally{
     button.disabled=false;
-    button.textContent="Simpan tautan PDF";
+    button.textContent=sedangEdit?"Simpan Perubahan":"Simpan tautan PDF";
   }
-
 };
 
 window.hapusDokumen=async id=>{
